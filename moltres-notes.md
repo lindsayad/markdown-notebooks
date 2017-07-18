@@ -69,7 +69,7 @@ Single channel k:
 Gavin ran the same `3d_auto_diff_rho.i` simulation that I ran back on April 28
 and he saw temperatures get into the thousands of kelvin by 3 seconds. The only
 difference was that his mesh was 1 cm **shorter**. When I ran the same input
-file back in April, I never got about 938 Kelvin and I simulated out to 5 seconds.
+file back in April, I never got above 938 Kelvin and I simulated out to 5 seconds.
 
 # 7/3/17
 
@@ -87,3 +87,46 @@ Summary of control experiments on 2D axisymmetric simulation:
     that low gain level doesn't have much effect
   - Can use all the best convergence features, however: direct preconditioning,
     no line search, and NEWTON
+
+# 7/5/17
+
+On a 2d-axisymmetric mesh scaled down by about .4:
+
+FunctionMaterial: k = 1.006752
+GenericMoltresMaterial: k = .239
+
+The latter is much more reasonable!!! How the hell did we increase k by so
+much???
+
+Alright, setting fissxs and nsf equal to zero fixed this issue.
+
+# 7/6/17
+
+Eigenvalue for `3d_eigen_function_materials.i`: .997073603
+
+Nice! So hopefully there's a decent chance that the long simulation works successfully.
+
+# 7/7/17
+
+For the 2D axisymmetric case, the eigenvalue calculation predicts a
+super-critical reactor at a scale of .97. However, the transient case is
+subcritical at this scale. The transient case is not super-critical until
+.99. The corresponding k-eigenvalue from the eigen simulation for this scale is:
+1.0051031918
+
+Ok, with 3d case with scale factor of .98, k = 1.0026059425. Scale of .99, k =
+1.0057546381. Let's use that value then.
+
+I think we have a converged 3d case...
+
+- 160 cpus
+- active time = 8095.03 seconds = 2.53 hours
+
+# 7/18/17
+
+So far I haven't run across a single case where the following petsc options
+cannot converge to steady state:
+```
+-pc_type lu -ksp_type gmres -snes_mf_operator -snes_linesearch_type basic
+```
+Sweet!

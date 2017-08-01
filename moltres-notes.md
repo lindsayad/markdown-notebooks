@@ -130,3 +130,37 @@ cannot converge to steady state:
 -pc_type lu -ksp_type gmres -snes_mf_operator -snes_linesearch_type basic
 ```
 Sweet!
+
+# 7/19/17
+
+Trying to understand the overall design of the MSRE. The fuel salt is cooled by
+a coolant salt in a heat exchanger. Then the coolant salt is cooled by an
+air-cooled radiator. The whole experiment was designed to operate at 10 MW with
+10 MW transferred between fuel salt and coolant salt and 10 MW transferred
+between coolant salt and the air.
+
+# 7/24/17
+
+- Tf = 922, Tm = 922, k = 1.0052768822942
+- Tf = 972, Tm = 922, k = 1.0009144326448
+- Tf = 922, Tm = 972, k = 1.0048156828401
+- Tf = 972, Tm = 972, k = 1.0004220217591
+
+- alphaf = -8.671
+- alpham = -0.913
+- alpha total calculated = -9.584
+- alpha total simulated = -9.655
+
+# 8/1/17
+
+### Channel flow cases
+
+Correct:
+- Laplace form, natural bcs for both components
+- traction form, no bc for perpendicular, natural for parallel
+- traction form, no bcs for both components
+- laplace form, no bcs for both components
+- laplace form, no bc for perpendicular, natural for parallel 
+
+Incorrect
+- traction form, natural for both components

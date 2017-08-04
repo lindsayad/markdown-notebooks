@@ -164,3 +164,23 @@ Correct:
 
 Incorrect
 - traction form, natural for both components
+
+# 8/3/17
+
+It looks to me like the leaks for gdb-8 are roughly the same between
+`moltres-dbg` and some test program like `hello`. However, the gdb-8 leaks
+appear to be quite different compared to gdb-7. For example the dominant leak in
+gdb-8 appears to be in `libiberty/cp-demangle.c:d_growable_string_resize()`
+whereas with gdb-7 it was in `record_thread`
+
+Here's a headache of dealing with a large stack and pointers: if we set pointer
+after pointer after pointer equal to each other and then I free the memory
+somewhere far up the stack, I risk the fact that somewhere later I'm going to
+get an invalid read or write.
+
+`dgs.buf` is a pointer to `char`.
+
+`cplus_demangle_print` returns `dgs.buf`. Its return value is a pointer to
+`char`. A pointer points to an address in memory. Its caller,
+`cp_comp_to_string` just returns the same return value, so it also returns a
+pointer to char.

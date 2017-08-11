@@ -184,3 +184,15 @@ get an invalid read or write.
 `char`. A pointer points to an address in memory. Its caller,
 `cp_comp_to_string` just returns the same return value, so it also returns a
 pointer to char.
+
+# 8/8/17
+
+It's encouraging that the Steady simulation results and Transient
+simulation marching to steady-state results match in the fluid flow simulations
+that I'm doing.
+
+# 8/11/17
+
+Running cases with openfoam...zero gradient boundary conditions for k and
+epsilon result in much different results than using the default tutorial bc
+settings. :-(

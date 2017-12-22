@@ -160,7 +160,7 @@ Correct:
 - traction form, no bc for perpendicular, natural for parallel
 - traction form, no bcs for both components
 - laplace form, no bcs for both components
-- laplace form, no bc for perpendicular, natural for parallel 
+- laplace form, no bc for perpendicular, natural for parallel
 
 Incorrect
 - traction form, natural for both components
@@ -196,3 +196,13 @@ that I'm doing.
 Running cases with openfoam...zero gradient boundary conditions for k and
 epsilon result in much different results than using the default tutorial bc
 settings. :-(
+
+# 11/27/17
+
+```
+- num_elems: 336, r: .8, z: 20, fuel: 922, group1: 4.25e-5
+- num_elems: 1960, r: .4, z: 10, fuel: 927.6383, group1: 4.618033e6
+- num_elems: 9338, r: .2, z: 5, fuel: 928.9675, group1: 5.747188e6
+- num_elems: 40474, r: .1, z: 2.5, fuel: 929.3437, group1: 6.056901e6
+- num_elems: 168000, r: .05, z: 1.25, fuel: 929.4508, group1: 6.144888e6
+```

@@ -1,3 +1,13 @@
+Print position in vector in LLDB:
+```
+p elem_num_map.__begin_[8297]
+```
+
+How to access the multi app FEProblem's time from the master app's FEProblem:
+```
+p _multi_apps._active_objects.__begin_[0].__begin_[0].__ptr_->_apps.__begin_[0].__ptr_->_executioner.__ptr_->_fe_problem._time
+```
+
 # 9/6/17
 
 Failed tests in MOOSE from changing wp to ds:
@@ -447,6 +457,7 @@ AuxiliarySystem::prepare
 Assembly::prepare
 ```
 
+```
 ComputeNodalStuffThreads:
   FEProblemBase::reinitNode
     *System*::reinitNode
@@ -455,7 +466,7 @@ ComputeNodalStuffThreads:
         var->reinitNode();
         var->computeNodalValues();
       }
-
+```
 
 In AuxiliarySystem::reinitElem, we have:
 
@@ -503,3 +514,768 @@ are.
 
 So the question for tomorrow is methods like computeNodalValues. That name as it
 stands I think should not be in MooseVariableField.
+
+# 11/1/17
+
+Ok, `computeNodalValues` is an appropriate name since its ultimately called from
+nodal object compute threads. `computeNodalNeighborValues` is also appropriately
+named since it is called for nodal constraints.
+
+```
+NonlinearSystemBase::computeResidualInternal
+  NonlinearSystemBase::enforceNodalConstraintsResidual
+    FEProblemBaes::reinitNodesNeighbor
+      SystemBase::reinitNodesNeighbor
+        var->reinitNodesNeighbor(nodes);
+        var->computeNodalNeighborValues();
+      auxiliarySystem::reinitNodesNeighbor
+```
+
+So the neighbor node is needed for constraints I guess.
+
+Ok, `setNodalValue` is used for both nodal and elemental variables...thus not an
+appropriate name!
+
+`_has_nodal_value` is only used in `add` and `insert`. And it only refers to the
+solution vector which is an array of numbers. Thus it should really read:
+`_has_dof_value`
+
+Legitimate nodal methods:
+```
+isNodal
+node
+nodalDofIndex
+isNodalDefined
+nodeNeighbor
+nodalDofIndexNeighbor
+isNodalNeighborDefined
+
+nodalValue
+nodalValueOld
+nodalValueOlder
+nodalValuePreviousNL
+nodalValueDot
+nodalValueDuDotDu
+nodalValueNeighbor
+nodalValueOldNeighbor
+nodalValueOlderNeighbor
+nodalValuePreviousNLNeighbor
+nodalValueDotNeighbor
+nodalValueDuDotDuNeighbor
+
+computeNodalValues
+computeNodalNeighborValues
+setNodalValue
+reinitNode
+reinitNodeNeighbor
+reinitNodes
+reinitNodesNeighbor
+getNodalValue
+getNodalValueOld
+getNodalValueOlder
+```
+
+Legitimate nodal data members:
+```
+_has_nodal_dof
+_need_nodal_u*
+```
+
+In computeElemValues (computeValuesHelper), `_nodal_u` is only computed if the
+`_need_nodal_u` flag is true (that's the only place that flag is checked before
+`_nodal_u` computations are done). The only way that flag sets set to true is if
+`nodalValue` gets called.
+
+So I was thinking I might entirely drop the nodal bits from
+`computeElemValues`. However, this might break nodal (e.g. Lagrange) aux
+variables. Actually think for a kernel object...say a kernel depends on a nodal
+aux variable. What we still want are the interpolations of the nodal aux
+variable at quadrature points, which is what is done in computeElemValues using
+the non-nodal logic. The nodal logic is not necessary for this case.
+
+```
+AuxiliarySystem::compute
+  AuxiliarySystem::computeScalarVars
+  AuxiliarySystem::computeNodalVars
+    ComputeNodalAuxVarsThread::()
+	  ::pre
+	  for (node : nodes)
+	    ::onNode(node)
+		  var->prepareAux
+		  _fe_problem.reinitNode
+		  aux->compute() # This is an aux kernel
+		  var->insert(_aux_sys.solution())
+		::postNode(node)
+      ::post
+  AuxiliarySystem::computeElementalVars
+```
+
+How is `_dof_indices` correct before insert is called in the above code scheme?
+It's done through FEProblem::reinitNode which ends up calling
+MooseVariable::reinitNode, which correctly sets `_dof_indices`. Now what does
+insert actually do? Insert inserts solution values for the current variable at
+the current node (in this case) using the correct dof index into the global
+auxiliary solution vector (which in general is a PetscVector (which is a class
+defined in libmesh)).
+
+AFAICT there really is no need to do nodal calculations in
+computeElemValues. We're axing it!!
+
+# 11/16/17
+
+Apparently NonlinearSystem has both a `_transient_sys` member which is
+initialized in the `NonlinaerSystem` constructor and a `_sys` member
+which is initialized in the `NonlinearSystemBase` constructor.
+
+So the FEProblem is created with the action `CreateProblemAction`. It's created
+using the `Factory`. In the `FEProblemBase` constructor the `EquationSystems`
+object is created/initialized. In the `FEProblem` constructor, the
+`NonLinearSystem` object is created using `std::make_shared`. In the
+`NonlinearSystem` constructor, the `TransientNonlinearImplicitSystem` object is
+created, so we now have all of our important problem objects:
+
+```
+FEProblem (moose)
+EquationSystems (libmesh)
+NonlinearSystem (moose)
+TransientNonlinearImplicitSystem (libmesh)
+```
+
+Notes:
+The `TransientNonlinearImplicitSystem` object is accessed using the `system()`
+method of `NonlinearSystem`. `system()` returns a reference to an object of type
+`System` so note that we have implicitly downcasted
+`TransientNonlinearImplicitSystem` to `System`.
+
+MOOSE classes:
+```
+FEProblem
+
+SystemBase
+NonlinearSystemBase
+NonlinearSystem
+```
+
+LibMesh classes:
+```
+System
+ImplicitSystem
+NonlinearImplicitSystem
+typedef Transient<NonlinearImplicitSystem> TransientNonlinearImplicitSystem
+
+EquationSystems
+```
+
+`TimeIntegrator::solve()` calls `System::solve()` which in turn calls
+`NonlinearSolver::solve()` which takes residual and jacobian arguments. In our case
+we actually call `PetscNonlinaerSolver::solve()` because its the derivative
+class of `NonlinearSolver` that we actually use. The `PetscNonlinearSolver`
+object is created in the constructor for `NonlinearImplicitSystem` using the
+static `NonlinaerSolver::build` method.
+
+The `ExplicitSystem` constructor creates the public `rhs` data member. The
+`ImplicitSystem` constructor (`ImplicitSystem` is a direct descendent of
+`ExplicitSystem`) creates the public `matrix` data member. The `System` constructor
+creates the public `solution` data member.
+
+A couple of notes:
+
+- David made a couple of commits that created optimizations for explicit time
+  schemes. These can be found with the hashes: `301a7d9e3' and `794c9730f0b8`.
+- Importantly these commits did not create the enum `KernelType`. It just made
+  use of it.
+
+I think I'm just going to ask John and David how different `KernelType`s are
+different. My question is are they treated any different for implicit schemes?
+Or is the distinction only relevant for explicit schemes?
+
+# 11/17/17
+
+`TimeIntegrator::postStep` is called from `NonlinearSystemBase::computeResidual`
+whose bt is:
+```
+TimeIntegrator::postStep
+NonlinearSystemBase::computeResidual
+FEProblemBase::computeResidualType
+FEProblemBase::computeResidual
+FEProblemBase::computeResidual
+Moose::compute_residual
+::__libmesh_petsc_snes_residual
+SNESComputeFunction
+SNESSolve_KSPONLY
+SNESSolve
+libMesh::PetscNonlinearSolver<double>::solve
+libMesh::NonlinearImplicitSystem::solve
+TimeIntegrator::solve
+NonlinearSystem::solve
+FEProblemBase::solve
+TimeStepper::step
+Transient::solveStep
+Transient::takeStep
+Transient::execute
+MooseApp::executeExecutioner
+MooseApp::run
+```
+
+`TimeIntegrator::postSolve` is called this way, immediately after
+`TimeIntegrator::solve`:
+```
+TimeIntegrator::postSolve
+NonlinearSystem::solve
+FEProblemBase::solve
+TimeStepper::step
+Transient::solveStep
+Transient::takeStep
+Transient::execute
+MooseApp::executeExecutioner
+MooseApp::run
+```
+
+```
+TimeIntegrator::preSolve
+NonlinearSystemBase::onTimestepBegin
+FEProblemBase::onTimestepBegin
+Transient::solveStep
+Transient::takeStep
+Transient::execute
+MooseApp::executeExecutioner
+MooseApp::run
+```
+
+What methods do we have (for TimeIntegrator)?:
+```
+preSolve
+preStep
+solve
+postStep
+postSolve
+```
+
+```
+Transient::takeStep
+  Transient::solveStep
+    FEProblemBase::onTimestepBegin
+	  NonlinaerSystemBase::onTimestepBegin
+	    TimeIntegrator::preSolve
+    TimeStepper::step->FEProblemBase::solve->NonlinearSystem::solve
+	  TimeIntegrator::solve
+	    libMesh::NonlinearImplicitSystem::solve->libMesh::PetscNonlinearSolver::solve->SNESSolve->
+	        SNESSolve_KSPONLY->SNESComputeFunction->::__libmesh_petsc_snes_residual->
+		    Moose::compute_residual->FEProblemBase::computeResidual->FEProblemBase::computeResidual
+          FEProblemBase::computeResidualType
+            NonlinearSystemBase::computeTimeDerivatives
+              TimeIntegrator::preStep
+              TimeIntegrator::computeTimeDerivatives
+            NonlinearSystemBase::computeResidual
+              NonlinearSystemBase::computeResidualInternal
+          	TimeIntegrator::postStep
+          	NonlinearSystemBase::computeNodalBCs
+      TimeIntegrator::postSolve
+```
+
+Kincaid & Cheney: "Another advantage of iterative methods is that they are
+usually stable, and they will actually dampen errors (due to roundoff or minor
+blunders) as the process continues."
+
+# 11/28/17
+
+Need to figure out why time step is lagging in multi-app.
+
+So incrementStepOrReject is called from:
+
+```
+Transient::incrementStepOrReject
+Transient::execute
+```
+
+```
+Transient::incrementStepOrReject
+TransientMultiApp::solveStep
+```
+
+```
+Transient::incrementStepOrReject
+TransientMultiApp::advanceStep
+FEProblemBase::advanceMultiApps
+Transient::incrementStepOrReject
+```
+
+The computeStep method of the `sub_app` time stepper is called before its
+Transient executioner's `incrementStepOrReject` method is called.
+
+The back traces:
+```
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 4.1
+  * frame #0: 0x00000001013f84b0 libmoose-dbg.0.dylib`Transient::incrementStepOrReject(this=0x000000010ee7a990) at Transient.C:352
+    frame #1: 0x00000001013f8377 libmoose-dbg.0.dylib`Transient::execute(this=0x000000010ee7a990) at Transient.C:317
+    frame #2: 0x000000010115fb33 libmoose-dbg.0.dylib`MooseApp::executeExecutioner(this=0x000000011080b200) at MooseApp.C:571
+    frame #3: 0x000000010116229a libmoose-dbg.0.dylib`MooseApp::run(this=0x000000011080b200) at MooseApp.C:727
+    frame #4: 0x0000000100002383 moose_test-dbg`main(argc=3, argv=0x00007fff5fbfe3a8) at main.C:35
+    frame #5: 0x00007fffd4cb1235 libdyld.dylib`start + 1
+    frame #6: 0x00007fffd4cb1235 libdyld.dylib`start + 1
+
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 2.1
+  * frame #0: 0x0000000101aab690 libmoose-dbg.0.dylib`TimeStepper::computeStep(this=0x00000001104210e0) at TimeStepper.C:75
+    frame #1: 0x00000001013f8497 libmoose-dbg.0.dylib`Transient::computeDT(this=0x0000000110455770) at Transient.C:346
+    frame #2: 0x0000000101745e16 libmoose-dbg.0.dylib`TransientMultiApp::computeDT(this=0x000000010ee7a640) at TransientMultiApp.C:465
+    frame #3: 0x0000000100d86845 libmoose-dbg.0.dylib`FEProblemBase::computeMultiAppsDT(this=0x000000010f060600, type=EXEC_TIMESTEP_BEGIN) at FEProblemBase.C:3349
+    frame #4: 0x00000001013fb719 libmoose-dbg.0.dylib`Transient::computeConstrainedDT(this=0x000000010ee7a990) at Transient.C:668
+    frame #5: 0x00000001013f87de libmoose-dbg.0.dylib`Transient::solveStep(this=0x000000010ee7a990, input_dt=-1) at Transient.C:423
+    frame #6: 0x00000001013f872d libmoose-dbg.0.dylib`Transient::takeStep(this=0x000000010ee7a990, input_dt=-1) at Transient.C:405
+    frame #7: 0x00000001013f83d3 libmoose-dbg.0.dylib`Transient::execute(this=0x000000010ee7a990) at Transient.C:326
+    frame #8: 0x000000010115fb33 libmoose-dbg.0.dylib`MooseApp::executeExecutioner(this=0x000000011080b200) at MooseApp.C:571
+    frame #9: 0x000000010116229a libmoose-dbg.0.dylib`MooseApp::run(this=0x000000011080b200) at MooseApp.C:727
+    frame #10: 0x0000000100002383 moose_test-dbg`main(argc=3, argv=0x00007fff5fbfe3a8) at main.C:35
+    frame #11: 0x00007fffd4cb1235 libdyld.dylib`start + 1
+    frame #12: 0x00007fffd4cb1235 libdyld.dylib`start + 1
+
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 4.1
+  * frame #0: 0x00000001013f84b0 libmoose-dbg.0.dylib`Transient::incrementStepOrReject(this=0x0000000110455770) at Transient.C:352
+    frame #1: 0x0000000101744f69 libmoose-dbg.0.dylib`TransientMultiApp::solveStep(this=0x000000010ee7a640, dt=0.001, target_time=0.002, auto_advance=true) at TransientMultiApp.C:344
+    frame #2: 0x0000000100d46f60 libmoose-dbg.0.dylib`FEProblemBase::execMultiApps(this=0x000000010f060600, type=EXEC_TIMESTEP_BEGIN, auto_advance=true) at FEProblemBase.C:3247
+    frame #3: 0x00000001013f89bf libmoose-dbg.0.dylib`Transient::solveStep(this=0x000000010ee7a990, input_dt=-1) at Transient.C:446
+    frame #4: 0x00000001013f872d libmoose-dbg.0.dylib`Transient::takeStep(this=0x000000010ee7a990, input_dt=-1) at Transient.C:405
+    frame #5: 0x00000001013f83d3 libmoose-dbg.0.dylib`Transient::execute(this=0x000000010ee7a990) at Transient.C:326
+    frame #6: 0x000000010115fb33 libmoose-dbg.0.dylib`MooseApp::executeExecutioner(this=0x000000011080b200) at MooseApp.C:571
+    frame #7: 0x000000010116229a libmoose-dbg.0.dylib`MooseApp::run(this=0x000000011080b200) at MooseApp.C:727
+    frame #8: 0x0000000100002383 moose_test-dbg`main(argc=3, argv=0x00007fff5fbfe3a8) at main.C:35
+    frame #9: 0x00007fffd4cb1235 libdyld.dylib`start + 1
+    frame #10: 0x00007fffd4cb1235 libdyld.dylib`start + 1
+```
+
+# 11/29/17
+
+The master app reads from `master_out_cp/0005.rd`. It looks for the parameter:
+"MOOSE Problem/FEProblemBase/MOOSE Problem/time".
+
+The `SubApp Backup` is also written to `0005.rd`
+
+So the master restartable data holds the key:
+"MOOSE Problem/FEProblemBase/MOOSE Problem/time"
+
+as well as the key:
+"MOOSE Problem/MultiApps/sub_app/backups"
+
+which I believe itself holds its own restartable data!
+
+See here's a backtrace:
+```
+  * frame #0: 0x0000000101a56725 libmoose-dbg.0.dylib`RestartableDataIO::serializeRestartableData(this=0x00007fff5fbfb220, restartable_data=size=30, stream=0x0000000112900500) at RestartableDataIO.C:66
+    frame #1: 0x0000000101a5b916 libmoose-dbg.0.dylib`RestartableDataIO::createBackup(this=0x00007fff5fbfb220) at RestartableDataIO.C:311
+    frame #2: 0x0000000101161ea8 libmoose-dbg.0.dylib`MooseApp::backup(this=0x0000000111801000) at MooseApp.C:661
+    frame #3: 0x0000000101729d2e libmoose-dbg.0.dylib`MultiApp::backup(this=0x0000000110365740) at MultiApp.C:342
+    frame #4: 0x0000000101734569 libmoose-dbg.0.dylib`void dataStore<SubAppBackups>(stream=0x00007fff5fbfb630, backups=0x00000001103681f0, context=0x0000000110365740) at MultiApp.h:395
+    frame #5: 0x0000000101734535 libmoose-dbg.0.dylib`void storeHelper<SubAppBackups>(stream=0x00007fff5fbfb630, data=0x00000001103681f0, context=0x0000000110365740) at DataIO.h:530
+    frame #6: 0x00000001017343c0 libmoose-dbg.0.dylib`RestartableData<SubAppBackups>::store(this=0x00000001103681c0, stream=0x00007fff5fbfb630) at RestartableData.h:152
+    frame #7: 0x0000000101a57ae5 libmoose-dbg.0.dylib`RestartableDataIO::serializeRestartableData(this=0x00000001103856b0, restartable_data=size=40, stream=0x00007fff5fbfc610) at RestartableDataIO.C:101
+    frame #8: 0x0000000101a56592 libmoose-dbg.0.dylib`RestartableDataIO::writeRestartableData(this=0x00000001103856b0, base_file_name="master_checkpoint_cp/0000.rd", restartable_datas=0x000000011080bb98, (null)=size=23) at RestartableDataIO.C:56
+    frame #9: 0x000000010177eb5b libmoose-dbg.0.dylib`Checkpoint::output(this=0x0000000110385400, (null)=0x00007fff5fbfd3c4) at Checkpoint.C:126
+    frame #10: 0x00000001017f993f libmoose-dbg.0.dylib`Output::outputStep(this=0x0000000110385400, type=0x00007fff5fbfd3c4) at Output.C:160
+    frame #11: 0x00000001018044e7 libmoose-dbg.0.dylib`OutputWarehouse::outputStep(this=0x000000011080b5a8, type=EXEC_INITIAL) at OutputWarehouse.C:152
+    frame #12: 0x0000000100d8fcf5 libmoose-dbg.0.dylib`FEProblemBase::outputStep(this=0x0000000111003c00, type=EXEC_INITIAL) at FEProblemBase.C:3904
+    frame #13: 0x00000001013f82bf libmoose-dbg.0.dylib`Transient::init(this=0x0000000110361c30) at Transient.C:268
+    frame #14: 0x000000010115fbd3 libmoose-dbg.0.dylib`MooseApp::executeExecutioner(this=0x000000011080b200) at MooseApp.C:569
+    frame #15: 0x000000010116236a libmoose-dbg.0.dylib`MooseApp::run(this=0x000000011080b200) at MooseApp.C:727
+    frame #16: 0x0000000100002383 moose_test-dbg`main(argc=3, argv=0x00007fff5fbfe3a8) at main.C:35
+    frame #17: 0x00007fffd4cb1235 libdyld.dylib`start + 1
+    frame #18: 0x00007fffd4cb1235 libdyld.dylib`start + 1
+```
+
+Alright, so sure enough the sub app time step has not been incremented by the
+time the output is written to the checkpoint file.
+
+With execute:
+```
+  * frame #0: 0x0000000101a5b7c5 libmoose-dbg.0.dylib`RestartableDataIO::createBackup(this=0x00007fff5fbfbe70) at RestartableDataIO.C:300
+    frame #1: 0x0000000101161ea8 libmoose-dbg.0.dylib`MooseApp::backup(this=0x000000010f003200) at MooseApp.C:661
+    frame #2: 0x0000000101729d2e libmoose-dbg.0.dylib`MultiApp::backup(this=0x0000000110c657c0) at MultiApp.C:342
+    frame #3: 0x0000000101734569 libmoose-dbg.0.dylib`void dataStore<SubAppBackups>(stream=0x00007fff5fbfc280, backups=0x0000000110c68270, context=0x0000000110c657c0) at MultiApp.h:395
+    frame #4: 0x0000000101734535 libmoose-dbg.0.dylib`void storeHelper<SubAppBackups>(stream=0x00007fff5fbfc280, data=0x0000000110c68270, context=0x0000000110c657c0) at DataIO.h:530
+    frame #5: 0x00000001017343c0 libmoose-dbg.0.dylib`RestartableData<SubAppBackups>::store(this=0x0000000110c68240, stream=0x00007fff5fbfc280) at RestartableData.h:152
+    frame #6: 0x0000000101a57ae5 libmoose-dbg.0.dylib`RestartableDataIO::serializeRestartableData(this=0x0000000110c85730, restartable_data=size=40, stream=0x00007fff5fbfd260) at RestartableDataIO.C:101
+    frame #7: 0x0000000101a56592 libmoose-dbg.0.dylib`RestartableDataIO::writeRestartableData(this=0x0000000110c85730, base_file_name="master_checkpoint_cp/0001.rd", restartable_datas=0x000000010f867198, (null)=size=23) at RestartableDataIO.C:56
+    frame #8: 0x000000010177eb5b libmoose-dbg.0.dylib`Checkpoint::output(this=0x0000000110c85480, (null)=0x00007fff5fbfe014) at Checkpoint.C:126
+    frame #9: 0x00000001017f993f libmoose-dbg.0.dylib`Output::outputStep(this=0x0000000110c85480, type=0x00007fff5fbfe014) at Output.C:160
+    frame #10: 0x00000001018044e7 libmoose-dbg.0.dylib`OutputWarehouse::outputStep(this=0x000000010f866ba8, type=EXEC_TIMESTEP_END) at OutputWarehouse.C:152
+    frame #11: 0x0000000100d8fcf5 libmoose-dbg.0.dylib`FEProblemBase::outputStep(this=0x0000000111003c00, type=EXEC_TIMESTEP_END) at FEProblemBase.C:3904
+    frame #12: 0x00000001013f9d15 libmoose-dbg.0.dylib`Transient::endStep(this=0x0000000110c61cb0, input_time=-1) at Transient.C:601
+    frame #13: 0x00000001013f84bb libmoose-dbg.0.dylib`Transient::execute(this=0x0000000110c61cb0) at Transient.C:327
+    frame #14: 0x000000010115fc03 libmoose-dbg.0.dylib`MooseApp::executeExecutioner(this=0x000000010f866800) at MooseApp.C:571
+    frame #15: 0x000000010116236a libmoose-dbg.0.dylib`MooseApp::run(this=0x000000010f866800) at MooseApp.C:727
+    frame #16: 0x0000000100002383 moose_test-dbg`main(argc=3, argv=0x00007fff5fbfe3a8) at main.C:35
+    frame #17: 0x00007fffd4cb1235 libdyld.dylib`start + 1
+    frame #18: 0x00007fffd4cb1235 libdyld.dylib`start + 1
+```
+
+Here's bt for incrementing step:
+```
+  * frame #0: 0x0000000101745be0 libmoose-dbg.0.dylib`TransientMultiApp::advanceStep(this=0x0000000110c657c0) at TransientMultiApp.C:423
+    frame #1: 0x0000000100d86069 libmoose-dbg.0.dylib`FEProblemBase::advanceMultiApps(this=0x0000000111003c00, type=EXEC_TIMESTEP_END) at FEProblemBase.C:3289
+    frame #2: 0x00000001013f8643 libmoose-dbg.0.dylib`Transient::incrementStepOrReject(this=0x0000000110c61cb0) at Transient.C:372
+    frame #3: 0x00000001013f8447 libmoose-dbg.0.dylib`Transient::execute(this=0x0000000110c61cb0) at Transient.C:317
+    frame #4: 0x000000010115fc03 libmoose-dbg.0.dylib`MooseApp::executeExecutioner(this=0x000000010f866800) at MooseApp.C:571
+    frame #5: 0x000000010116236a libmoose-dbg.0.dylib`MooseApp::run(this=0x000000010f866800) at MooseApp.C:727
+    frame #6: 0x0000000100002383 moose_test-dbg`main(argc=3, argv=0x00007fff5fbfe3a8) at main.C:35
+    frame #7: 0x00007fffd4cb1235 libdyld.dylib`start + 1
+    frame #8: 0x00007fffd4cb1235 libdyld.dylib`start + 1
+```
+
+In Transient::execute
+```
+  while (true)
+  {
+    if (_first != true)
+      incrementStepOrReject();
+
+    _first = false;
+
+    if (!keepGoing())
+      break;
+
+    preStep();
+    computeDT();
+    takeStep();
+    endStep();
+    postStep();
+
+    _steps_taken++;
+  }
+```
+
+In Transient::incrementStepOrReject
+```
+#ifdef LIBMESH_ENABLE_AMR
+      _problem.adaptMesh();
+#endif
+
+      _time_old = _time; // = _time_old + _dt;
+      _t_step++;
+
+      _problem.advanceState();
+
+      _problem.advanceMultiApps(EXEC_TIMESTEP_BEGIN);
+      _problem.advanceMultiApps(EXEC_TIMESTEP_END);
+    }
+```
+
+In Transient::takeStep
+```
+solveStep
+```
+
+In Transient::solveStep
+```
+  _dt_old = _dt;
+
+  if (input_dt == -1.0)
+    _dt = computeConstrainedDT();
+  else
+    _dt = input_dt;
+
+  Real current_dt = _dt;
+
+  _problem.onTimestepBegin();
+
+  // Increment time
+  _time = _time_old + _dt;
+```
+
+# 11/30/17
+
+
+Alright, we make just as many calls to `serializeRestartableData` in the old
+restart case as in the new. The difference is that in that final time step with
+the new case, the time has not yet been incremented.
+
+# 12/5/17
+
+```
+/Users/lindad/projects/moose/test/moose_test-opt -i function_dt_master.i --recover --recoversuffix cpr
+```
+```
+Running command: /Users/lindad/projects/moose/test/moose_test-opt -i
+picard_rel_tol_master.i --half-transient Outputs/checkpoint=true
+```
+
+```
+* thread #1, queue = 'com.apple.main-thread', stop reason = step over
+  * frame #0: 0x0000000101176ba1 libmoose-dbg.0.dylib`MooseApp::runInputFile(this=0x0000000112000000) at MooseApp.C:557
+    frame #1: 0x000000010173e069 libmoose-dbg.0.dylib`MultiApp::createApp(this=0x0000000110364030, i=0, start_time=0) at MultiApp.C:580
+    frame #2: 0x000000010173ac97 libmoose-dbg.0.dylib`MultiApp::initialSetup(this=0x0000000110364030) at MultiApp.C:205
+    frame #3: 0x000000010175e70f libmoose-dbg.0.dylib`TransientMultiApp::initialSetup(this=0x0000000110364030) at TransientMultiApp.C:134
+    frame #4: 0x0000000100ed295a libmoose-dbg.0.dylib`MooseObjectWarehouse<MultiApp>::initialSetup(this=0x0000000111006a38, tid=0) const at MooseObjectWarehouse.h:69
+    frame #5: 0x0000000100d498cb libmoose-dbg.0.dylib`FEProblemBase::initialSetup(this=0x0000000111005400) at FEProblemBase.C:666
+    frame #6: 0x00000001014153e5 libmoose-dbg.0.dylib`Transient::init(this=0x0000000110365560) at Transient.C:262
+    frame #7: 0x00000001011774b3 libmoose-dbg.0.dylib`MooseApp::executeExecutioner(this=0x000000011080b200) at MooseApp.C:599
+    frame #8: 0x0000000101179c4a libmoose-dbg.0.dylib`MooseApp::run(this=0x000000011080b200) at MooseApp.C:757
+    frame #9: 0x0000000100002383 moose_test-dbg`main(argc=6, argv=0x00007fff5fbfe370) at main.C:35
+    frame #10: 0x00007fffd4cb1235 libdyld.dylib`start + 1
+```
+
+Possible sources of jacobian error:
+
+- ThermalContact
+- Creep/elasticity
+
+Radial return.
+
+Issues with only getting one actions' built objects per syntax association,
+whereas I expect 3. This comes from:
+```
+  syntax.registerActionSyntax("PlenumPressureUOAction", "BCs/PlenumPressure/*");
+  syntax.registerActionSyntax("CavityPressureAction",   "BCs/PlenumPressure/*");
+  syntax.registerActionSyntax("CavityPressurePPAction", "BCs/PlenumPressure/*");
+```
+
+This seems strange because for Burnup for example there are three actions
+associated with one syntax:
+```
+  syntax.registerActionSyntax("BurnupAuxKernelsAction", "Burnup/*", "add_aux_kernel");
+  syntax.registerActionSyntax("BurnupAuxVarsAction",    "Burnup/*", "add_aux_variable");
+  syntax.registerActionSyntax("BurnupFunctionAction",   "Burnup/*", "add_function");
+```
+
+However, note that there is a difference here: the former syntax registratino
+has two arguments whereas the latter has three! Could be related to what Daniel
+said about appending as opposed to setting.
+
+# 12/11/17
+
+After linearizing with the Newton algorithm, we solve:
+
+Ax = b
+
+The accuracy of the Jacobian doesn't determine the number of linear iterations
+required to solve this system; only application of a preconditioner will change
+the effeciency of the iterative process. However, for Jacobian-Free
+Newton-Krylov, the closer the preconditoning matrix is to reproducing the
+Jacobian-vector products genrerated by the JFNK process, the better the
+efficiency of the solve will be.
+
+The number of non-linear iterations is determined by the accuracy of the Jacobian.
+
+# 12/18/17
+
+Here's the backtrace of console residual information. Looks like we just created
+our own custom Petsc monitor
+
+```
+#0  Console::output (this=0xac2070, type=@0x7fffffffcfd4: EXEC_NONLINEAR) at /home/lindad/projects/moose/framework/src/outputs/Console.C:315
+#1  0x00007ffff2a72cbd in Output::outputStep (this=0xac2070, type=@0x7fffffffcfd4: EXEC_NONLINEAR)
+    at /home/lindad/projects/moose/framework/src/outputs/Output.C:160
+#2  0x00007ffff2a3fae0 in PetscOutput::petscNonlinearOutput (its=0, norm=0.0060435771370377948, void_ptr=0xac2070)
+    at /home/lindad/projects/moose/framework/src/outputs/PetscOutput.C:195
+#3  0x00007fffebf164e3 in SNESMonitor (snes=0xcd8b10, iter=0, rnorm=0.0060435771370377948) at /home/lindad/petsc/src/snes/interface/snes.c:3520
+#4  0x00007fffebea8eaa in SNESSolve_NEWTONLS (snes=0xcd8b10) at /home/lindad/petsc/src/snes/impls/ls/ls.c:185
+#5  0x00007fffebf1b5fe in SNESSolve (snes=0xcd8b10, b=0x0, x=0x96ab00) at /home/lindad/petsc/src/snes/interface/snes.c:4122
+#6  0x00007fffeeec6c92 in libMesh::PetscNonlinearSolver<double>::solve (this=0x8da920, jac_in=..., x_in=..., r_in=...)
+    at ../src/solvers/petsc_nonlinear_solver.C:702
+#7  0x00007fffeef471f3 in libMesh::NonlinearImplicitSystem::solve (this=0x8d9b40) at ../src/systems/nonlinear_implicit_system.C:183
+#8  0x00007ffff2a234ae in TimeIntegrator::solve (this=0x904ec0) at /home/lindad/projects/moose/framework/src/timeintegrators/TimeIntegrator.C:53
+#9  0x00007ffff257db3c in NonlinearSystem::solve (this=0x8d7830) at /home/lindad/projects/moose/framework/src/base/NonlinearSystem.C:161
+#10 0x00007ffff21e3455 in FEProblemBase::solve (this=0x8a1db0) at /home/lindad/projects/moose/framework/src/base/FEProblemBase.C:3752
+#11 0x00007ffff282a019 in TimeStepper::step (this=0xab04c0) at /home/lindad/projects/moose/framework/src/timesteppers/TimeStepper.C:160
+#12 0x00007ffff2b0314c in Transient::solveStep (this=0x912e60, input_dt=-1) at /home/lindad/projects/moose/framework/src/executioners/Transient.C:495
+#13 0x00007ffff2b02a54 in Transient::takeStep (this=0x912e60, input_dt=-1) at /home/lindad/projects/moose/framework/src/executioners/Transient.C:408
+#14 0x00007ffff2b0266c in Transient::execute (this=0x912e60) at /home/lindad/projects/moose/framework/src/executioners/Transient.C:326
+#15 0x00007ffff26481c9 in MooseApp::executeExecutioner (this=0x72b900) at /home/lindad/projects/moose/framework/src/base/MooseApp.C:601
+#16 0x00007ffff2648ddd in MooseApp::run (this=0x72b900) at /home/lindad/projects/moose/framework/src/base/MooseApp.C:757
+#17 0x000000000041db68 in main (argc=16, argv=0x7fffffffd8b8) at /home/lindad/projects/bison/src/main.C:49
+```
+
+# 12/21/17
+
+Failed tests:
+
+outputs/vtk.files_parallel............................................................ FAILED (MISSING FILES)
+functions/image_function.threshold_adapt_parallel_check_files......................... FAILED (MISSING FILES)
+misc/exception.parallel_error_jacobian_transient_non_zero_rank............... FAILED (EXPECTED ERROR MISSING)
+vectorpostprocessors/csv_reader.tester_fail.................................. FAILED (EXPECTED ERROR MISSING)
+misc/exception.parallel_error_residual_transient_non_zero_rank............... FAILED (EXPECTED ERROR MISSING)
+restart/kernel_restartable.parallel_error2................................... FAILED (EXPECTED ERROR MISSING)
+materials/material_dependency.dont_reinit_mat_for_aux....................................... FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_one_3D_Mac...................................... FAILED (EXODIFF)
+mesh/custom_partitioner.custom_linear_partitioner........................................... FAILED (EXODIFF)
+multiapps/picard_failure.test............................................................... FAILED (EXODIFF)
+ics/depend_on_uo.ic_depend_on_uo............................................................ FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_two_2D.......................................... FAILED (EXODIFF)
+misc/exception.parallel_exception_jacobian_transient_non_zero_rank.......................... FAILED (EXODIFF)
+mesh/subdomain_partitioner.subdomain_partitioner............................................ FAILED (EXODIFF)
+misc/exception.parallel_exception_residual_transient_non_zero_rank.......................... FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_one_2D.......................................... FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_two_3D_Mac...................................... FAILED (EXODIFF)
+utils/random.test_uo_par_mesh............................................................... FAILED (EXODIFF)
+mesh/centroid_partitioner.centroid_partitioner_test......................................... FAILED (EXODIFF)
+utils/random.test_par_mesh.................................................................. FAILED (EXODIFF)
+restart/restartable_types.first_parallel..................................................... FAILED (ERRMSG)
+mesh/nemesis.nemesis_test.................................................................... FAILED (ERRMSG)
+outputs/iterative.csv....................................................................... FAILED (CSVDIFF)
+postprocessors/all_print_pps.test........................................................... FAILED (CSVDIFF)
+userobjects/setup_interface_count.GeneralUserObject......................................... FAILED
+(CSVDIFF)
+
+25 fails
+
+outputs/vtk.files_parallel............................................................ FAILED (MISSING FILES)
+misc/exception.parallel_error_jacobian_transient_non_zero_rank............... FAILED (EXPECTED ERROR MISSING)
+vectorpostprocessors/csv_reader.tester_fail.................................. FAILED (EXPECTED ERROR MISSING)
+misc/exception.parallel_error_residual_transient_non_zero_rank............... FAILED (EXPECTED ERROR MISSING)
+restart/kernel_restartable.parallel_error2................................... FAILED (EXPECTED ERROR MISSING)
+mesh/ghost_functors.geometric_edge_neighbor_one_3D_Mac...................................... FAILED (EXODIFF)
+mesh/custom_partitioner.custom_linear_partitioner........................................... FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_two_3D_Mac...................................... FAILED (EXODIFF)
+mesh/subdomain_partitioner.subdomain_partitioner............................................ FAILED (EXODIFF)
+misc/exception.parallel_exception_residual_transient_non_zero_rank.......................... FAILED (EXODIFF)
+ics/depend_on_uo.ic_depend_on_uo............................................................ FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_two_2D.......................................... FAILED (EXODIFF)
+misc/exception.parallel_exception_jacobian_transient_non_zero_rank.......................... FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_one_2D.......................................... FAILED (EXODIFF)
+utils/random.test_uo_par_mesh............................................................... FAILED (EXODIFF)
+utils/random.test_par_mesh.................................................................. FAILED (EXODIFF)
+mesh/centroid_partitioner.centroid_partitioner_test......................................... FAILED (EXODIFF)
+restart/restartable_types.first_parallel..................................................... FAILED (ERRMSG)
+mesh/nemesis.nemesis_test.................................................................... FAILED (ERRMSG)
+postprocessors/all_print_pps.test........................................................... FAILED (CSVDIFF)
+userobjects/setup_interface_count.GeneralUserObject......................................... FAILED (CSVDIFF)
+functions/image_function.threshold_adapt_parallel_check_files................................. FAILED (CRASH)
+
+22 fails
+
+outputs/vtk.files_parallel............................................................ FAILED (MISSING FILES)
+misc/exception.parallel_error_residual_transient_non_zero_rank............... FAILED (EXPECTED ERROR MISSING)
+vectorpostprocessors/csv_reader.tester_fail.................................. FAILED (EXPECTED ERROR MISSING)
+misc/exception.parallel_error_jacobian_transient_non_zero_rank............... FAILED (EXPECTED ERROR MISSING)
+restart/kernel_restartable.parallel_error2................................... FAILED (EXPECTED ERROR MISSING)
+materials/material_dependency.dont_reinit_mat_for_aux....................................... FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_one_3D_Mac...................................... FAILED (EXODIFF)
+mesh/custom_partitioner.custom_linear_partitioner........................................... FAILED (EXODIFF)
+multiapps/picard_failure.test............................................................... FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_two_3D_Mac...................................... FAILED (EXODIFF)
+misc/exception.parallel_exception_jacobian_transient_non_zero_rank.......................... FAILED (EXODIFF)
+misc/exception.parallel_exception_residual_transient_non_zero_rank.......................... FAILED (EXODIFF)
+ics/depend_on_uo.ic_depend_on_uo............................................................ FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_two_2D.......................................... FAILED (EXODIFF)
+mesh/subdomain_partitioner.subdomain_partitioner............................................ FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_one_2D.......................................... FAILED (EXODIFF)
+mesh/centroid_partitioner.centroid_partitioner_test......................................... FAILED (EXODIFF)
+utils/random.test_uo_par_mesh............................................................... FAILED (EXODIFF)
+utils/random.test_par_mesh.................................................................. FAILED (EXODIFF)
+mesh/nemesis.nemesis_test.................................................................... FAILED (ERRMSG)
+restart/restartable_types.first_parallel..................................................... FAILED (ERRMSG)
+outputs/iterative.csv....................................................................... FAILED (CSVDIFF)
+postprocessors/all_print_pps.test........................................................... FAILED (CSVDIFF)
+userobjects/setup_interface_count.GeneralUserObject......................................... FAILED (CSVDIFF)
+functions/image_function.threshold_adapt_parallel_check_files................................. FAILED (CRASH)
+-------------------------------------------------------------------------------------------------------------
+Ran 1493 tests in 50.3 seconds
+1468 passed, 32 skipped, 0 pending, 25 FAILED
+
+
+This also failed on my projects2 directory!
+
+misc/exception.parallel_error_jacobian_transient_non_zero_rank...................... FAILED (NO EXPECTED ERR)
+vectorpostprocessors/csv_reader.tester_fail......................................... FAILED (NO EXPECTED ERR)
+misc/exception.parallel_error_residual_transient_non_zero_rank...................... FAILED (NO EXPECTED ERR)
+restart/kernel_restartable.parallel_error2.......................................... FAILED (NO EXPECTED ERR)
+outputs/vtk.files_parallel............................................................ FAILED (MISSING FILES)
+mesh/ghost_functors.geometric_edge_neighbor_one_3D_Mac...................................... FAILED (EXODIFF)
+mesh/custom_partitioner.custom_linear_partitioner........................................... FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_two_3D_Mac...................................... FAILED (EXODIFF)
+misc/exception.parallel_exception_jacobian_transient_non_zero_rank.......................... FAILED (EXODIFF)
+misc/exception.parallel_exception_residual_transient_non_zero_rank.......................... FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_one_2D.......................................... FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_two_2D.......................................... FAILED (EXODIFF)
+ics/depend_on_uo.ic_depend_on_uo............................................................ FAILED (EXODIFF)
+mesh/subdomain_partitioner.subdomain_partitioner............................................ FAILED (EXODIFF)
+mesh/centroid_partitioner.centroid_partitioner_test......................................... FAILED (EXODIFF)
+utils/random.test_par_mesh.................................................................. FAILED (EXODIFF)
+utils/random.test_uo_par_mesh............................................................... FAILED (EXODIFF)
+restart/restartable_types.first_parallel..................................................... FAILED (ERRMSG)
+mesh/nemesis.nemesis_test.................................................................... FAILED (ERRMSG)
+userobjects/setup_interface_count.GeneralUserObject......................................... FAILED (CSVDIFF)
+postprocessors/all_print_pps.test........................................................... FAILED (CSVDIFF)
+functions/image_function.threshold_adapt_parallel_check_files................................. FAILED (CRASH)
+
+Here are errors on rod which I trust quite a bit more:
+
+dgkernels/jacobian_testing.jacobian_test............................................ FAILED (NO EXPECTED OUT)
+interfacekernels/1d_interface.jacobian_test......................................... FAILED (NO EXPECTED OUT)
+interfacekernels/1d_interface.single_variable_jacobian_test......................... FAILED (NO EXPECTED OUT)
+interfacekernels/1d_interface.mixed_shapes_jacobian_test............................ FAILED (NO EXPECTED OUT)
+misc/jacobian.offdiag............................................................... FAILED (NO EXPECTED OUT)
+misc/jacobian.simple................................................................ FAILED (NO EXPECTED OUT)
+misc/jacobian.med................................................................... FAILED (NO EXPECTED OUT)
+interfacekernels/2d_interface.jacobian_test......................................... FAILED (NO EXPECTED OUT)
+multiapps/picard_failure.test............................................................... FAILED (EXODIFF)
+materials/material_dependency.dont_reinit_mat_for_aux....................................... FAILED (EXODIFF)
+outputs/iterative.csv....................................................................... FAILED (CSVDIFF)
+postprocessors/all_print_pps.test........................................................... FAILED (CSVDIFF)
+
+Ok, we call `updateMesh` in both our residual and jacobian computing chains. So
+that means we move our nodes around and perhaps change our penetration info.
+
+What should be done is that for evaulating non-linear residuals we should first
+make sure the mesh is updated, e.g. 1) move our nodes 2) update our geometric
+and penetration info. Then we should 3) update the set of captured contact
+points and then 4) finally determine our contact residuals.
+
+Ok, we really might be able to do something with this snes update. So F, the
+residual that is sent to KSPSolve is a pointer to snes->vec_func. So as long as
+we have access to snes we should be able to modify F.
+
+# 12/22/17
+
+Here's another computeResidual call that I don't think is necessary: (this is
+the first time this computeResidual call is made)
+
+```
+  * frame #0: 0x00000001033ce7dd libmoose-dbg.0.dylib`FEProblemBase::computeResidualType(this=0x0000000114005e18, soln=0x0000000112f56730, residual=0x0000000112f56bc0, type=KT_ALL) at FEProblemBase.C:4010
+    frame #1: 0x00000001033ce170 libmoose-dbg.0.dylib`FEProblemBase::computeResidual(this=0x0000000114005e18, soln=0x0000000112f56730, residual=0x0000000112f56bc0) at FEProblemBase.C:3978
+    frame #2: 0x00000001033ce126 libmoose-dbg.0.dylib`FEProblemBase::computeResidual(this=0x0000000114005e18, (null)=0x0000000112f56280, soln=0x0000000112f56730, residual=0x0000000112f56bc0) at FEProblemBase.C:3970
+    frame #3: 0x00000001038bbc2e libmoose-dbg.0.dylib`NonlinearSystem::solve(this=0x0000000114007e18) at NonlinearSystem.C:140
+    frame #4: 0x00000001033c9f32 libmoose-dbg.0.dylib`FEProblemBase::solve(this=0x0000000114005e18) at FEProblemBase.C:3756
+    frame #5: 0x0000000104192914 libmoose-dbg.0.dylib`TimeStepper::step(this=0x00000001150169a8) at TimeStepper.C:160
+    frame #6: 0x0000000103ace1b3 libmoose-dbg.0.dylib`Transient::solveStep(this=0x0000000112f74518, input_dt=-1) at Transient.C:495
+    frame #7: 0x0000000103acd92a libmoose-dbg.0.dylib`Transient::takeStep(this=0x0000000112f74518, input_dt=-1) at Transient.C:408
+    frame #8: 0x0000000103acd263 libmoose-dbg.0.dylib`Transient::execute(this=0x0000000112f74518) at Transient.C:326
+    frame #9: 0x0000000103836423 libmoose-dbg.0.dylib`MooseApp::executeExecutioner(this=0x0000000113015600) at MooseApp.C:604
+    frame #10: 0x0000000103838b7f libmoose-dbg.0.dylib`MooseApp::run(this=0x0000000113015600) at MooseApp.C:761
+    frame #11: 0x0000000100002ab5 bison-dbg`main(argc=4, argv=0x00007fff5fbfec08) at main.C:50
+    frame #12: 0x00007fffa51b6235 libdyld.dylib`start + 1
+    frame #13: 0x00007fffa51b6235 libdyld.dylib`start + 1
+```
+
+Second call, this calls is from the petsc solve, determining the initial
+non-linear residual. It is called outside the non-linera iteration loop:
+```
+  * frame #0: 0x00000001033ce7dd libmoose-dbg.0.dylib`FEProblemBase::computeResidualType(this=0x0000000114005e18, soln=0x0000000112f56730, residual=0x00007fff5fbfd468, type=KT_ALL) at FEProblemBase.C:4010
+    frame #1: 0x00000001033ce170 libmoose-dbg.0.dylib`FEProblemBase::computeResidual(this=0x0000000114005e18, soln=0x0000000112f56730, residual=0x00007fff5fbfd468) at FEProblemBase.C:3978
+    frame #2: 0x00000001033ce126 libmoose-dbg.0.dylib`FEProblemBase::computeResidual(this=0x0000000114005e18, (null)=0x0000000112f56280, soln=0x0000000112f56730, residual=0x00007fff5fbfd468) at FEProblemBase.C:3970
+    frame #3: 0x00000001038ba2eb libmoose-dbg.0.dylib`Moose::compute_residual(soln=0x0000000112f56730, residual=0x00007fff5fbfd468, sys=0x0000000112f56280) at NonlinearSystem.C:45
+    frame #4: 0x0000000106fcce1d libmesh_dbg.0.dylib`::__libmesh_petsc_snes_residual(snes=0x0000000115890260, x=0x000000011403aa60, r=0x0000000115808a60, ctx=0x0000000112f56e70) at petsc_nonlinear_solver.C:130
+    frame #5: 0x000000010fb4695e libpetsc.3.08.dylib`SNESComputeFunction(snes=0x0000000115890260, x=0x000000011403aa60, y=0x0000000115808a60) at snes.c:2195
+    frame #6: 0x000000010fbdbdcd libpetsc.3.08.dylib`SNESSolve_NEWTONLS(snes=0x0000000115890260) at ls.c:175
+    frame #7: 0x000000010fb57f88 libpetsc.3.08.dylib`SNESSolve(snes=0x0000000115890260, b=0x0000000000000000, x=0x000000011403aa60) at snes.c:4106
+    frame #8: 0x0000000106fca2dc libmesh_dbg.0.dylib`libMesh::PetscNonlinearSolver<double>::solve(this=0x0000000112f56e70, jac_in=0x0000000112f56da0, x_in=0x0000000112f56610, r_in=0x0000000112f56bc0, (null)=0.0000000001, (null)=100) at petsc_nonlinear_solver.C:702
+    frame #9: 0x00000001070eac80 libmesh_dbg.0.dylib`libMesh::NonlinearImplicitSystem::solve(this=0x0000000112f56280) at nonlinear_implicit_system.C:181
+    frame #10: 0x00000001041739ce libmoose-dbg.0.dylib`TimeIntegrator::solve(this=0x0000000112f7b0b8) at TimeIntegrator.C:53
+    frame #11: 0x00000001038bbea2 libmoose-dbg.0.dylib`NonlinearSystem::solve(this=0x0000000114007e18) at NonlinearSystem.C:161
+    frame #12: 0x00000001033c9f32 libmoose-dbg.0.dylib`FEProblemBase::solve(this=0x0000000114005e18) at FEProblemBase.C:3756
+    frame #13: 0x0000000104192914 libmoose-dbg.0.dylib`TimeStepper::step(this=0x00000001150169a8) at TimeStepper.C:160
+    frame #14: 0x0000000103ace1b3 libmoose-dbg.0.dylib`Transient::solveStep(this=0x0000000112f74518, input_dt=-1) at Transient.C:495
+    frame #15: 0x0000000103acd92a libmoose-dbg.0.dylib`Transient::takeStep(this=0x0000000112f74518, input_dt=-1) at Transient.C:408
+    frame #16: 0x0000000103acd263 libmoose-dbg.0.dylib`Transient::execute(this=0x0000000112f74518) at Transient.C:326
+    frame #17: 0x0000000103836423 libmoose-dbg.0.dylib`MooseApp::executeExecutioner(this=0x0000000113015600) at MooseApp.C:604
+    frame #18: 0x0000000103838b7f libmoose-dbg.0.dylib`MooseApp::run(this=0x0000000113015600) at MooseApp.C:761
+    frame #19: 0x0000000100002ab5 bison-dbg`main(argc=4, argv=0x00007fff5fbfec08) at main.C:50
+    frame #20: 0x00007fffa51b6235 libdyld.dylib`start + 1
+    frame #21: 0x00007fffa51b6235 libdyld.dylib`start + 1
+```
+
+- Just following residual and jacobian computing threads. The next call is to our
+compute jacobian chain and it's from the petsc non-linear iteration loop
+(calculating our preconditioner).
+
+- Next call is to the compute residual thread and this is for approximating the
+  jacobian action through finite differencing. This will now get called once per
+  additional linear iteration.

@@ -1279,3 +1279,795 @@ compute jacobian chain and it's from the petsc non-linear iteration loop
 - Next call is to the compute residual thread and this is for approximating the
   jacobian action through finite differencing. This will now get called once per
   additional linear iteration.
+
+
+# 1/3/17
+
+Ok, it looks like we get the following messages for ksp->reason:
+
+- Nonliner residual > 0: KSP_CONVERGED_RTOL
+- Linear residual: KSP_CONVERGED_ITERATING
+- Nolinear residual = 0: KSP_CONVERGED_ITERATING
+
+Here's state of system at zeroth non-linear residual evaluation:
+
+- snes->ksp->reason = KSP_CONVERGED_ITERATING
+- snes->iter = 0
+- snes->ksp->its = 0
+
+And state when doing first linear residual evaluation:
+
+- snes->ksp->reason = KSP_CONVERGED_ITERATING
+- snes->iter = 0
+- snes->ksp->its = 0
+
+The same :-(
+
+But the fix: snes->nfuncs
+
+So to detect non-linear residual evaluations we could use the check:
+
+if (snes->nfuncs == 0 || snes->ksp->reason == KSP_CONVERGED_RTOL)
+
+May also need some additional comparisons for snes->ksp->reason.
+
+KSP_CONVERGED_RTOL == 2
+
+Final check:
+
+if (snes->nfuncs == 0 || snes->ksp->reason > 0)
+
+This is because enum values greater than zero indicate converged, less than zero
+indicates diverged, equal to zero indicates still iterating.
+
+I have seen cases where even though the ksp diverges (I've seen
+KSP_DIVERGED_BREAKDOWN), the non-linear solve continues, e.g. another non-linear
+residual is evaluated. So better would be:
+
+if (snes->nfuncs == 0 || snes->ksp->reason != KSP_CONVERGED_ITERATING)
+
+DisplacedProblem::updateMesh is called from FEProblemBase::computeResidualType
+
+There are about a million calls to GeometricSearchData::update
+
+  * frame #0: 0x0000000103b6025e libmoose-dbg.0.dylib`PenetrationLocator::detectPenetration(this=0x0000000112b1e7d0) at PenetrationLocator.C:91
+    frame #1: 0x0000000103b36fbc libmoose-dbg.0.dylib`GeometricSearchData::update(this=0x00000001138106b8, type=ALL) at GeometricSearchData.C:83
+    frame #2: 0x000000010334be82 libmoose-dbg.0.dylib`DisplacedProblem::updateGeomSearch(this=0x0000000113810218, type=ALL) at DisplacedProblem.C:743
+    frame #3: 0x00000001033d40c6 libmoose-dbg.0.dylib`FEProblemBase::updateGeomSearch(this=0x0000000113806618, type=ALL) at FEProblemBase.C:4396
+    frame #4: 0x00000001038f1901 libmoose-dbg.0.dylib`NonlinearSystemBase::augmentSparsity(this=0x000000011380c618, sparsity=0x000000011480d518, n_nz=size=20, n_oz=size=20) at NonlinearSystemBase.C:2367
+    frame #5: 0x00000001039d9705 libmoose-dbg.0.dylib`extraSparsity(sparsity=0x000000011480d518, n_nz=size=20, n_oz=size=20, context=0x000000011380c618) at SystemBase.C:47
+    frame #6: 0x00000001057b469c libmesh_dbg.0.dylib`libMesh::DofMap::build_sparsity(this=0x0000000112f46ff0, mesh=0x0000000112dcffb0) const at dof_map.C:113
+    frame #7: 0x000000010580226e libmesh_dbg.0.dylib`libMesh::DofMap::compute_sparsity(this=0x0000000112f46ff0, mesh=0x0000000112dcffb0) at dof_map.C:1737
+    frame #8: 0x00000001070cbc99 libmesh_dbg.0.dylib`libMesh::ImplicitSystem::reinit(this=0x0000000112f46a80) at implicit_system.C:176
+    frame #9: 0x00000001070e9867 libmesh_dbg.0.dylib`libMesh::NonlinearImplicitSystem::reinit(this=0x0000000112f46a80) at nonlinear_implicit_system.C:90
+    frame #10: 0x0000000107206a45 libmesh_dbg.0.dylib`libMesh::TransientSystem<libMesh::NonlinearImplicitSystem>::reinit(this=0x0000000112f46a80) at transient_system.C:90
+    frame #11: 0x00000001070440c4 libmesh_dbg.0.dylib`libMesh::EquationSystems::reinit(this=0x00000001138068e8) at equation_systems.C:258
+    frame #12: 0x0000000103380c0f libmoose-dbg.0.dylib`FEProblemBase::reinitBecauseOfGhostingOrNewGeomObjects(this=0x0000000113806618) at FEProblemBase.C:3015
+    frame #13: 0x00000001033761fd libmoose-dbg.0.dylib`FEProblemBase::initialSetup(this=0x0000000113806618) at FEProblemBase.C:626
+    frame #14: 0x0000000103accf95 libmoose-dbg.0.dylib`Transient::init(this=0x0000000112f636c8) at Transient.C:262
+    frame #15: 0x00000001038363f3 libmoose-dbg.0.dylib`MooseApp::executeExecutioner(this=0x0000000113015600) at MooseApp.C:602
+    frame #16: 0x0000000103838b7f libmoose-dbg.0.dylib`MooseApp::run(this=0x0000000113015600) at MooseApp.C:761
+    frame #17: 0x0000000100002ab5 bison-dbg`main(argc=3, argv=0x00007fff5fbfec90) at main.C:50
+    frame #18: 0x00007fffa51b6235 libdyld.dylib`start + 1
+
+  * frame #0: 0x0000000103b6025e libmoose-dbg.0.dylib`PenetrationLocator::detectPenetration(this=0x0000000112b1e7d0) at PenetrationLocator.C:91
+    frame #1: 0x0000000103b36fbc libmoose-dbg.0.dylib`GeometricSearchData::update(this=0x00000001138106b8, type=ALL) at GeometricSearchData.C:83
+    frame #2: 0x00000001033489f8 libmoose-dbg.0.dylib`DisplacedProblem::updateMesh(this=0x0000000113810218) at DisplacedProblem.C:201
+    frame #3: 0x0000000103376267 libmoose-dbg.0.dylib`FEProblemBase::initialSetup(this=0x0000000113806618) at FEProblemBase.C:630
+    frame #4: 0x0000000103accf95 libmoose-dbg.0.dylib`Transient::init(this=0x0000000112f636c8) at Transient.C:262
+    frame #5: 0x00000001038363f3 libmoose-dbg.0.dylib`MooseApp::executeExecutioner(this=0x0000000113015600) at MooseApp.C:602
+    frame #6: 0x0000000103838b7f libmoose-dbg.0.dylib`MooseApp::run(this=0x0000000113015600) at MooseApp.C:761
+    frame #7: 0x0000000100002ab5 bison-dbg`main(argc=3, argv=0x00007fff5fbfec90) at main.C:50
+    frame #8: 0x00007fffa51b6235 libdyld.dylib`start + 1
+
+  * frame #0: 0x0000000103b6025e libmoose-dbg.0.dylib`PenetrationLocator::detectPenetration(this=0x0000000112b1e7d0) at PenetrationLocator.C:91
+    frame #1: 0x0000000103b36fbc libmoose-dbg.0.dylib`GeometricSearchData::update(this=0x00000001138106b8, type=ALL) at GeometricSearchData.C:83
+    frame #2: 0x000000010334be82 libmoose-dbg.0.dylib`DisplacedProblem::updateGeomSearch(this=0x0000000113810218, type=ALL) at DisplacedProblem.C:743
+    frame #3: 0x00000001033d40c6 libmoose-dbg.0.dylib`FEProblemBase::updateGeomSearch(this=0x0000000113806618, type=ALL) at FEProblemBase.C:4396
+    frame #4: 0x00000001033762a8 libmoose-dbg.0.dylib`FEProblemBase::initialSetup(this=0x0000000113806618) at FEProblemBase.C:633
+    frame #5: 0x0000000103accf95 libmoose-dbg.0.dylib`Transient::init(this=0x0000000112f636c8) at Transient.C:262
+    frame #6: 0x00000001038363f3 libmoose-dbg.0.dylib`MooseApp::executeExecutioner(this=0x0000000113015600) at MooseApp.C:602
+    frame #7: 0x0000000103838b7f libmoose-dbg.0.dylib`MooseApp::run(this=0x0000000113015600) at MooseApp.C:761
+    frame #8: 0x0000000100002ab5 bison-dbg`main(argc=3, argv=0x00007fff5fbfec90) at main.C:50
+    frame #9: 0x00007fffa51b6235 libdyld.dylib`start + 1
+
+  * frame #0: 0x0000000103b6025e libmoose-dbg.0.dylib`PenetrationLocator::detectPenetration(this=0x0000000112b1e7d0) at PenetrationLocator.C:91
+    frame #1: 0x0000000103b36fbc libmoose-dbg.0.dylib`GeometricSearchData::update(this=0x00000001138106b8, type=ALL) at GeometricSearchData.C:83
+    frame #2: 0x00000001033489f8 libmoose-dbg.0.dylib`DisplacedProblem::updateMesh(this=0x0000000113810218) at DisplacedProblem.C:201
+    frame #3: 0x00000001033cee65 libmoose-dbg.0.dylib`FEProblemBase::computeResidualType(this=0x0000000113806618, soln=0x0000000112f46f30, residual=0x0000000112f473c0, type=KT_ALL) at FEProblemBase.C:4033
+    frame #4: 0x00000001033ce170 libmoose-dbg.0.dylib`FEProblemBase::computeResidual(this=0x0000000113806618, soln=0x0000000112f46f30, residual=0x0000000112f473c0) at FEProblemBase.C:3978
+    frame #5: 0x00000001033ce126 libmoose-dbg.0.dylib`FEProblemBase::computeResidual(this=0x0000000113806618, (null)=0x0000000112f46a80, soln=0x0000000112f46f30, residual=0x0000000112f473c0) at FEProblemBase.C:3970
+    frame #6: 0x00000001038bbc2e libmoose-dbg.0.dylib`NonlinearSystem::solve(this=0x000000011380c618) at NonlinearSystem.C:140
+    frame #7: 0x00000001033c9f32 libmoose-dbg.0.dylib`FEProblemBase::solve(this=0x0000000113806618) at FEProblemBase.C:3756
+    frame #8: 0x0000000104192914 libmoose-dbg.0.dylib`TimeStepper::step(this=0x0000000112b03028) at TimeStepper.C:160
+    frame #9: 0x0000000103ace1b3 libmoose-dbg.0.dylib`Transient::solveStep(this=0x0000000112f636c8, input_dt=-1) at Transient.C:495
+    frame #10: 0x0000000103acd92a libmoose-dbg.0.dylib`Transient::takeStep(this=0x0000000112f636c8, input_dt=-1) at Transient.C:408
+    frame #11: 0x0000000103acd263 libmoose-dbg.0.dylib`Transient::execute(this=0x0000000112f636c8) at Transient.C:326
+    frame #12: 0x0000000103836423 libmoose-dbg.0.dylib`MooseApp::executeExecutioner(this=0x0000000113015600) at MooseApp.C:604
+    frame #13: 0x0000000103838b7f libmoose-dbg.0.dylib`MooseApp::run(this=0x0000000113015600) at MooseApp.C:761
+    frame #14: 0x0000000100002ab5 bison-dbg`main(argc=3, argv=0x00007fff5fbfec90) at main.C:50
+    frame #15: 0x00007fffa51b6235 libdyld.dylib`start + 1
+
+  * frame #0: 0x0000000103b6025e libmoose-dbg.0.dylib`PenetrationLocator::detectPenetration(this=0x0000000112b1e7d0) at PenetrationLocator.C:91
+    frame #1: 0x0000000103b36fbc libmoose-dbg.0.dylib`GeometricSearchData::update(this=0x00000001138106b8, type=ALL) at GeometricSearchData.C:83
+    frame #2: 0x00000001033489f8 libmoose-dbg.0.dylib`DisplacedProblem::updateMesh(this=0x0000000113810218) at DisplacedProblem.C:201
+    frame #3: 0x00000001033cee65 libmoose-dbg.0.dylib`FEProblemBase::computeResidualType(this=0x0000000113806618, soln=0x0000000112f46f30, residual=0x00007fff5fbfd4f8, type=KT_ALL) at FEProblemBase.C:4033
+    frame #4: 0x00000001033ce170 libmoose-dbg.0.dylib`FEProblemBase::computeResidual(this=0x0000000113806618, soln=0x0000000112f46f30, residual=0x00007fff5fbfd4f8) at FEProblemBase.C:3978
+    frame #5: 0x00000001033ce126 libmoose-dbg.0.dylib`FEProblemBase::computeResidual(this=0x0000000113806618, (null)=0x0000000112f46a80, soln=0x0000000112f46f30, residual=0x00007fff5fbfd4f8) at FEProblemBase.C:3970
+    frame #6: 0x00000001038ba2eb libmoose-dbg.0.dylib`Moose::compute_residual(soln=0x0000000112f46f30, residual=0x00007fff5fbfd4f8, sys=0x0000000112f46a80) at NonlinearSystem.C:45
+    frame #7: 0x0000000106fcce1d libmesh_dbg.0.dylib`::__libmesh_petsc_snes_residual(snes=0x00000001150c2460, x=0x0000000115059660, r=0x0000000115001460, ctx=0x0000000112f47670) at petsc_nonlinear_solver.C:130
+    frame #8: 0x000000010fb4695e libpetsc.3.08.dylib`SNESComputeFunction(snes=0x00000001150c2460, x=0x0000000115059660, y=0x0000000115001460) at snes.c:2195
+    frame #9: 0x000000010fbdbdcd libpetsc.3.08.dylib`SNESSolve_NEWTONLS(snes=0x00000001150c2460) at ls.c:175
+    frame #10: 0x000000010fb57f88 libpetsc.3.08.dylib`SNESSolve(snes=0x00000001150c2460, b=0x0000000000000000, x=0x0000000115059660) at snes.c:4106
+    frame #11: 0x0000000106fca2dc libmesh_dbg.0.dylib`libMesh::PetscNonlinearSolver<double>::solve(this=0x0000000112f47670, jac_in=0x0000000112f475a0, x_in=0x0000000112f46e10, r_in=0x0000000112f473c0, (null)=0.0000000001, (null)=100) at petsc_nonlinear_solver.C:702
+    frame #12: 0x00000001070eac80 libmesh_dbg.0.dylib`libMesh::NonlinearImplicitSystem::solve(this=0x0000000112f46a80) at nonlinear_implicit_system.C:181
+    frame #13: 0x00000001041739ce libmoose-dbg.0.dylib`TimeIntegrator::solve(this=0x0000000112f6a268) at TimeIntegrator.C:53
+    frame #14: 0x00000001038bbea2 libmoose-dbg.0.dylib`NonlinearSystem::solve(this=0x000000011380c618) at NonlinearSystem.C:161
+    frame #15: 0x00000001033c9f32 libmoose-dbg.0.dylib`FEProblemBase::solve(this=0x0000000113806618) at FEProblemBase.C:3756
+    frame #16: 0x0000000104192914 libmoose-dbg.0.dylib`TimeStepper::step(this=0x0000000112b03028) at TimeStepper.C:160
+    frame #17: 0x0000000103ace1b3 libmoose-dbg.0.dylib`Transient::solveStep(this=0x0000000112f636c8, input_dt=-1) at Transient.C:495
+    frame #18: 0x0000000103acd92a libmoose-dbg.0.dylib`Transient::takeStep(this=0x0000000112f636c8, input_dt=-1) at Transient.C:408
+    frame #19: 0x0000000103acd263 libmoose-dbg.0.dylib`Transient::execute(this=0x0000000112f636c8) at Transient.C:326
+    frame #20: 0x0000000103836423 libmoose-dbg.0.dylib`MooseApp::executeExecutioner(this=0x0000000113015600) at MooseApp.C:604
+    frame #21: 0x0000000103838b7f libmoose-dbg.0.dylib`MooseApp::run(this=0x0000000113015600) at MooseApp.C:761
+    frame #22: 0x0000000100002ab5 bison-dbg`main(argc=3, argv=0x00007fff5fbfec90) at main.C:50
+    frame #23: 0x00007fffa51b6235 libdyld.dylib`start + 1
+
+DisplacedProblem::updateMesh is called from FEProblemBase::computeResidualType
+
+Ok, we call `updateMesh` in both our residual and jacobian computing chains. So
+that means we move our nodes around and perhaps change our penetration info.
+
+What should be done is that for evaulating non-linear residuals we should first
+make sure the mesh is updated, e.g. 1) move our nodes 2) update our geometric
+and penetration info. Then we should 3) update the set of captured contact
+points and then 4) finally determine our contact residuals.
+
+0 Nonlinear |R| = 1.495345e-01
+
+distance = 3.568794e-4
+
+Resid1: -2220.8116223172437 master
+Resid2: -1347.9038896496565 master
+Resid3: 3568.7155119669001 slave
+
+matrix-free solve:
+
+ 0 Nonlinear |R| = 4.786440e-02
+    0 KSP unpreconditioned resid norm 4.786440058172e-02 true resid norm 4.786440058172e-02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.751252206702e-02 true resid norm 1.751252206702e-02 ||r(i)||/||b|| 3.658778101090e-01
+    2 KSP unpreconditioned resid norm 7.106912253736e-03 true resid norm 7.106912253468e-03 ||r(i)||/||b|| 1.484801265052e-01
+    3 KSP unpreconditioned resid norm 4.838598438201e-03 true resid norm 4.838598433259e-03 ||r(i)||/||b|| 1.010897112353e-01
+    4 KSP unpreconditioned resid norm 9.402733137094e-18 true resid norm 4.587004841479e-03 ||r(i)||/||b|| 9.583332885674e-02
+  Linear solve converged due to CONVERGED_RTOL iterations 4
+ 1 Nonlinear |R| = 9.010475e-02
+    0 KSP unpreconditioned resid norm 9.010475030347e-02 true resid norm 9.010475030347e-02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 2.522682782986e-02 true resid norm 2.522682782986e-02 ||r(i)||/||b|| 2.799722294873e-01
+    2 KSP unpreconditioned resid norm 9.313539181987e-03 true resid norm 9.313539173420e-03 ||r(i)||/||b|| 1.033634646570e-01
+    3 KSP unpreconditioned resid norm 6.214150880452e-03 true resid norm 6.214150821783e-03 ||r(i)||/||b|| 6.896585142130e-02
+    4 KSP unpreconditioned resid norm 4.339074190343e-03 true resid norm 4.339074228001e-03 ||r(i)||/||b|| 4.815588760179e-02
+    5 KSP unpreconditioned resid norm 2.431284496950e-03 true resid norm 2.431284505302e-03 ||r(i)||/||b|| 2.698286713091e-02
+    6 KSP unpreconditioned resid norm 8.427780129200e-05 true resid norm 8.427787032991e-05 ||r(i)||/||b|| 9.353321555863e-04
+    7 KSP unpreconditioned resid norm 1.037937761218e-11 true resid norm 1.758290685527e+00 ||r(i)||/||b|| 1.951385115219e+01
+  Linear solve converged due to CONVERGED_RTOL iterations 7
+ 2 Nonlinear |R| = 1.649952e+00
+    0 KSP unpreconditioned resid norm 1.649951538460e+00 true resid norm 1.649951538460e+00 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 4.291152194435e-01 true resid norm 4.291152194435e-01 ||r(i)||/||b|| 2.600774686049e-01
+    2 KSP unpreconditioned resid norm 1.477253634835e-01 true resid norm 1.477253611568e-01 ||r(i)||/||b|| 8.953315155828e-02
+    3 KSP unpreconditioned resid norm 8.747908695732e-02 true resid norm 8.747908778489e-02 ||r(i)||/||b|| 5.301918616745e-02
+    4 KSP unpreconditioned resid norm 3.817918283169e-02 true resid norm 3.817918188206e-02 ||r(i)||/||b|| 2.313957773432e-02
+    5 KSP unpreconditioned resid norm 1.713179678242e-02 true resid norm 1.713178675329e-02 ||r(i)||/||b|| 1.038320602390e-02
+    6 KSP unpreconditioned resid norm 8.948665136664e-03 true resid norm 8.948662682531e-03 ||r(i)||/||b|| 5.423591223099e-03
+    7 KSP unpreconditioned resid norm 4.261823750819e-03 true resid norm 4.261808756404e-03 ||r(i)||/||b|| 2.582990261872e-03
+    8 KSP unpreconditioned resid norm 1.791881412849e-03 true resid norm 1.791877253530e-03 ||r(i)||/||b|| 1.086018111297e-03
+    9 KSP unpreconditioned resid norm 6.062748648289e-04 true resid norm 6.062751089429e-04 ||r(i)||/||b|| 3.674502522108e-04
+   10 KSP unpreconditioned resid norm 3.765308187906e-16 true resid norm 1.901382189021e+08 ||r(i)||/||b|| 1.152386688154e+08
+  Linear solve converged due to CONVERGED_RTOL iterations 10
+
+
+Newton solve:
+0 Nonlinear |R| = 4.562724e-02
+    0 KSP unpreconditioned resid norm 4.562723505280e-02 true resid norm 4.562723505280e-02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 4.291610408077e-02 true resid norm 4.291610408077e-02 ||r(i)||/||b|| 9.405808620904e-01
+    2 KSP unpreconditioned resid norm 1.351032209192e-02 true resid norm 1.351032209192e-02 ||r(i)||/||b|| 2.961021432985e-01
+    3 KSP unpreconditioned resid norm 9.156650185358e-03 true resid norm 9.156650185358e-03 ||r(i)||/||b|| 2.006838716999e-01
+    4 KSP unpreconditioned resid norm 5.990233609685e-03 true resid norm 5.990233609685e-03 ||r(i)||/||b|| 1.312863600600e-01
+    5 KSP unpreconditioned resid norm 2.202010328664e-03 true resid norm 2.202010328664e-03 ||r(i)||/||b|| 4.826087590264e-02
+    6 KSP unpreconditioned resid norm 7.283034643562e-04 true resid norm 7.283034643562e-04 ||r(i)||/||b|| 1.596203371765e-02
+    7 KSP unpreconditioned resid norm 1.906180772829e-04 true resid norm 1.906180772829e-04 ||r(i)||/||b|| 4.177725804825e-03
+    8 KSP unpreconditioned resid norm 1.066057187355e-05 true resid norm 1.066057187355e-05 ||r(i)||/||b|| 2.336449241603e-04
+    9 KSP unpreconditioned resid norm 4.508408661214e-06 true resid norm 4.508408661215e-06 ||r(i)||/||b|| 9.880959597920e-05
+   10 KSP unpreconditioned resid norm 1.662560900169e-16 true resid norm 1.680738557347e-16 ||r(i)||/||b|| 3.683630084975e-15
+  Linear solve converged due to CONVERGED_RTOL iterations 10
+ 1 Nonlinear |R| = 1.204547e-01
+    0 KSP unpreconditioned resid norm 1.204546822107e-01 true resid norm 1.204546822107e-01 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.494828504040e-02 true resid norm 1.494828504040e-02 ||r(i)||/||b|| 1.240988292531e-01
+    2 KSP unpreconditioned resid norm 1.233337228461e-03 true resid norm 1.233337228461e-03 ||r(i)||/||b|| 1.023901442290e-02
+    3 KSP unpreconditioned resid norm 7.152188510119e-04 true resid norm 7.152188510118e-04 ||r(i)||/||b|| 5.937659191703e-03
+    4 KSP unpreconditioned resid norm 2.620317764914e-04 true resid norm 2.620317764914e-04 ||r(i)||/||b|| 2.175355674702e-03
+    5 KSP unpreconditioned resid norm 1.159634940781e-04 true resid norm 1.159634940781e-04 ||r(i)||/||b|| 9.627147068912e-04
+    6 KSP unpreconditioned resid norm 4.413616365984e-05 true resid norm 4.413616365983e-05 ||r(i)||/||b|| 3.664130181560e-04
+    7 KSP unpreconditioned resid norm 1.648901180449e-05 true resid norm 1.648901180450e-05 ||r(i)||/||b|| 1.368897539048e-04
+    8 KSP unpreconditioned resid norm 2.804134281485e-06 true resid norm 2.804134281491e-06 ||r(i)||/||b|| 2.327957892568e-05
+    9 KSP unpreconditioned resid norm 1.398263856639e-06 true resid norm 1.398263856637e-06 ||r(i)||/||b|| 1.160821506458e-05
+   10 KSP unpreconditioned resid norm 1.738488310090e-17 true resid norm 1.658039547668e-17 ||r(i)||/||b|| 1.376484099446e-16
+  Linear solve converged due to CONVERGED_RTOL iterations 10
+ 2 Nonlinear |R| = 1.199152e-04
+
+Matrix SMP:
+initial solution vector on time step 3:
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+-0.0172816
+-0.3
+-0.0172816
+-0.3
+-0.00869411
+-0.199999
+-0.00869411
+-0.199999
+
+After the first non-linear iteration:
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+-0.0172816
+-0.3
+-0.0172816
+-0.3
+-0.0171587
+-0.298569
+-0.0171587
+-0.298569
+
+After the second non-linear iteration:
+0.00143036
+-0.000304093
+0.
+0.
+0.
+0.
+-0.00394194
+4.44861e-18
+0.
+0.
+0.00143036
+0.000304093
+-0.0172816
+-0.3
+-0.0172816
+-0.3
+-0.0122453
+-0.296938
+-0.0176921
+-0.298973
+
+Matrix FDP:
+1 non-linear:
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+-0.0172816
+-0.3
+-0.0172816
+-0.3
+-0.0172816
+-0.3
+-0.0172816
+-0.3
+
+2 non-linear:
+0.00132888
+0.000125133
+0.
+0.
+0.
+0.
+-0.00408206
+0.000592353
+0.
+0.
+0.00163352
+0.000754935
+-0.0172816
+-0.3
+-0.0172816
+-0.3
+-0.0130558
+-0.298287
+-0.0167746
+-0.300244
+
+
+With matrix free:
+0 non-linear:
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+-0.0172816
+-0.3
+-0.0172816
+-0.3
+-0.00869424
+-0.2
+-0.00869424
+-0.2
+
+1 non-linear:
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+-0.0172816
+-0.3
+-0.0172816
+-0.3
+-0.0172816
+-0.3
+-0.0172816
+-0.3
+
+2 non-linaer:
+0.0292859
+-0.00622614
+0.
+0.
+0.
+0.
+-0.0807092
+-1.00132e-11
+0.
+0.
+0.0292859
+0.00622614
+-0.0172816
+-0.3
+-0.0172816
+-0.3
+0.0861564
+-0.237035
+-0.0261878
+-0.278707
+
+nodes:
+
+1: top right left block
+2: top left left block
+3: middle left left block
+4: middle right left block
+5: bottom left left block
+6: bottom right left block
+7: bottom right right block
+8: top right right block
+9: top left right block
+10: bottom left right block
+
+matrix-free:
+0 residual:
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+-0.0122123
+0.0199942
+0.0276254
+0.0312878
+
+1 residual:
+0.
+0.
+0.
+0.
+0.
+0.
+0.0728156
+1.93855e-12
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+-0.0455098
+-6.57476e-12
+-0.0273059
+-1.78586e-11
+
+2 residual:
+-0.00107939
+0.00195319
+0.
+0.
+0.
+0.
+-1.334
+0.168409
+0.
+0.
+-0.00107939
+-0.00195319
+0.
+0.
+0.
+0.
+0.73583
+-0.0914974
+0.598851
+-0.0772759
+
+matrix SMP:
+0 residual:
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+-0.0122124
+0.0199944
+0.0276258
+0.0312882
+
+1 residual:
+0.
+0.
+0.
+0.
+0.
+0.
+0.0715866
+-4.96732e-18
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+-0.0447786
+0.000330886
+-0.0265873
+0.000403093
+
+2 residual:
+-2.65348e-06
+4.80612e-06
+0.
+0.
+0.
+0.
+5.95969e-05
+-2.45497e-05
+0.
+0.
+-2.65348e-06
+-4.80612e-06
+0.
+0.
+0.
+0.
+-3.0547e-05
+1.6313e-05
+-1.91304e-05
+7.87762e-06
+
+matrix FDP:
+0 nonlinear:
+1 nonlinear:
+0.
+0.
+0.
+0.
+0.
+0.
+0.0728156
+-5.85789e-11
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+0.
+-0.0455098
+1.20099e-10
+-0.0273059
+7.26427e-11
+
+2 nonlinaer:
+-2.50763e-06
+4.85422e-06
+0.
+0.
+0.
+0.
+1.89873e-05
+0.000322573
+0.
+0.
+-3.03928e-06
+-5.30093e-06
+0.
+0.
+0.
+0.
+-4.23526e-05
+-0.000199893
+2.79678e-05
+-0.000122915
+
+
+matrix-free from solid mechanics disp_y slave element:
+  _val = size=4 {
+    [0] = 0.000010295307058583291
+    [1] = 0.000012199548279089882
+    [2] = -0.000005363167860984916
+    [3] = -0.000017131687476688257
+  }
+
+
+matrix from solid mechanics disp_y slave element:
+  _val = size=4 {
+    [0] = -330.88581794684291
+    [1] = -403.0925249092017
+    [2] = 330.88581794684291
+    [3] = 403.0925249092017
+  }
+
+The stress tensors are fundamentally different from the matrix-free and matrix
+cases:
+
+
+matrix:
+
+zeroth non-linaer residual:
+(const SymmTensor) $97 = (_xx = -19266.730169981209, _yy = -8257.1700728490905,
+_zz = -8257.1700728490905, _xy = -64103.233949937516, _yz = 0, _zx = 0)
+
+
+first non-linear residual:
+(lldb) p _stress[_qp]
+(const SymmTensor) $96 = (_xx = -275.75369078613789, _yy = -118.1801531940591,
+_zz = -118.1801531940591, _xy = -917.47292857006209, _yz = 0, _zx = 0)
+
+
+Matrix-free:
+
+0th non-linear residual:
+1 linear residual:
+(const SymmTensor) $3 = (_xx = -19266.439665524453, _yy = -8257.046893022618,
+_zz = -8257.0459675641214, _xy = -64102.572896076854, _yz = 0, _zx = 0)
+2 linear residual:
+(const SymmTensor) $3 = (_xx = -19266.439665524453, _yy = -8257.046893022618,
+_zz = -8257.0459675641214, _xy = -64102.572896076854, _yz = 0, _zx = 0)
+3 linear residual:
+4 linear residual:
+(const SymmTensor) $7 = (_xx = -19266.425004289489, _yy = -8257.0393552307814,
+_zz = -8257.039307856081, _xy = -64102.572529606805, _yz = 0, _zx = 0)
+
+1st non-linear residual:
+(lldb) p _stress[_qp]
+(const SymmTensor) $2 = (_xx = -0.000046917203695813368, _yy =
+-0.000010535390001637372, _zz = -0.000017235778109235224, _xy =
+0.000037176401113541834, _yz = 0, _zx = 0)
+
+So the big change happens in the first non-linear residual
+evaluation. Everything is equivalent heading into that, e.g. the first linear
+solve appears to be the same (potentially
+
+Matrix:
+strain:
+(SymmTensor) $100 = (_xx = -0.00020484559886970247, _yy = 0, _zz = 0, _xy =
+-0.0011927148071410806, _yz = 0, _zx = 0)
+
+leads to:
+stress:
+(SymmTensor) $101 = (_xx = -275.75369078613789, _yy = -118.1801531940591, _zz =
+-118.1801531940591, _xy = -917.47292857006209, _yz = 0, _zx = 0)
+
+Matrix-free:
+strain:
+(SymmTensor) $10 = (_xx = -0.000000000038585853262551595, _yy =
+0.0000000000087105045398772063, _zz = 0, _xy = 0.000000000048329321447604379,
+_yz = 0, _zx = 0)
+
+leads to:
+stress:
+(SymmTensor) $11 = (_xx = -0.000046917203695813368, _yy =
+-0.000010535390001637372, _zz = -0.000017235778109235224, _xy =
+0.000037176401113541834, _yz = 0, _zx = 0)
+
+So our problem is indeed the solution vector obtained from incrementing the
+solution vector with the linear solve. So something isn't good in the solution
+of Ax = b for matrix-free. b is the same, so the problem must be in the
+approximation of the Jacobian. Something in the linear solve for the explicit
+matrix case doesn't allow the displacements on the LHS of the right block to be
+equal to the displacements on the RHS of the right block, whereas this doesn't
+happen in the matrix-free case.
+
+So if I solve with NEWTON using an FDP preconditioner, then the solve looks
+almost exactly like matrix free for the first non-linear iteration, e.g. the
+solution vector after the first non-linear iteration looks the exact same and
+consequently the first non-linear esidual is the exact same.. So
+I've been barking up the wrong tree; I've been scrutinizing the first non-linear
+iteration when I should be scrutinizing whats going wrong in the second
+non-linaer iteration. The residual SHOULD increase from 0th non-linear to 1st
+non-linear residual evaluation because we're moving into contact. So why is the
+second linear solve not giving us a good newton step??? Why is the Jacobian
+action approximated with matrix-free totally wrong?
+
+With explicit matrix:
+Time Step  3, time = 0.3
+                dt = 0.1
+ 0 Nonlinear |R| = 4.786440e-02
+      0 Linear |R| = 4.786440e-02
+      1 Linear |R| = 1.328504e-17
+  Linear solve converged due to CONVERGED_RTOL iterations 1
+ 1 Nonlinear |R| = 9.010475e-02
+      0 Linear |R| = 9.010475e-02
+      1 Linear |R| = 4.665225e-19
+  Linear solve converged due to CONVERGED_RTOL iterations 1
+ 2 Nonlinear |R| = 4.026441e-04
+      0 Linear |R| = 4.026441e-04
+      1 Linear |R| = 6.858344e-19
+  Linear solve converged due to CONVERGED_RTOL iterations 1
+ 3 Nonlinear |R| = 4.471554e-05
+      0 Linear |R| = 4.471554e-05
+      1 Linear |R| = 1.137866e-20
+  Linear solve converged due to CONVERGED_RTOL iterations 1
+ 4 Nonlinear |R| = 4.297539e-10
+Nonlinear solve converged due to CONVERGED_FNORM_ABS iterations 4
+ Solve Converged!
+
+With matrix free:
+Time Step  3, time = 0.3
+                dt = 0.1
+ 0 Nonlinear |R| = 4.786440e-02
+      0 Linear |R| = 4.786440e-02
+      1 Linear |R| = 2.696862e-11
+  Linear solve converged due to CONVERGED_RTOL iterations 1
+ 1 Nonlinear |R| = 9.010475e-02
+      0 Linear |R| = 9.010475e-02
+      1 Linear |R| = 2.257897e-03
+      2 Linear |R| = 1.125954e-03
+      3 Linear |R| = 1.763171e-10
+  Linear solve converged due to CONVERGED_RTOL iterations 3
+ 2 Nonlinear |R| = 3.450321e-01
+      0 Linear |R| = 3.450321e-01
+      1 Linear |R| = 1.499698e-02
+      2 Linear |R| = 1.316531e-02
+      3 Linear |R| = 3.271140e-03
+      4 Linear |R| = 1.858556e-05
+      5 Linear |R| = 2.756099e-08
+  Linear solve converged due to CONVERGED_RTOL iterations 5
+ 3 Nonlinear |R| = 4.964049e-01
+      0 Linear |R| = 4.964049e-01
+      1 Linear |R| = 2.858225e-01
+      2 Linear |R| = 9.975366e-02
+      3 Linear |R| = 2.184165e-02
+      4 Linear |R| = 4.251682e-03
+      5 Linear |R| = 2.748165e-03
+      6 Linear |R| = 6.535339e-04
+      7 Linear |R| = 4.179196e-04
+      8 Linear |R| = 1.498660e-05
+      9 Linear |R| = 7.088401e-08
+  Linear solve converged due to CONVERGED_RTOL iterations 9
+ 4 Nonlinear |R| = 1.540996e+00
+
+Here's the key again, the true residual norm doesn't match the unpreconditioned
+norm. Why??? We should not be hitting any discontinuties!
+
+Time Step  3, time = 0.3
+                dt = 0.1
+ 0 Nonlinear |R| = 4.786440e-02
+    0 KSP unpreconditioned resid norm 4.786440052731e-02 true resid norm 4.786440052731e-02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 2.696861560766e-11 true resid norm 4.587005503695e-03 ||r(i)||/||b|| 9.583334280094e-02
+  Linear solve converged due to CONVERGED_RTOL iterations 1
+ 1 Nonlinear |R| = 9.010475e-02
+    0 KSP unpreconditioned resid norm 9.010474988004e-02 true resid norm 9.010474988004e-02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 2.257896880153e-03 true resid norm 1.978756666570e-01 ||r(i)||/||b|| 2.196062548539e+00
+    2 KSP unpreconditioned resid norm 1.125953792339e-03 true resid norm 2.813551715533e-01 ||r(i)||/||b|| 3.122534294006e+00
+    3 KSP unpreconditioned resid norm 1.781365914843e-10 true resid norm 3.404908043026e-01 ||r(i)||/||b|| 3.778833022187e+00
+  Linear solve converged due to CONVERGED_RTOL iterations 3
+ 2 Nonlinear |R| = 3.450320e-01
+
+More obvious if we look at pc_type none
+
+Time Step  3, time = 0.3
+                dt = 0.1
+ 0 Nonlinear |R| = 4.786440e-02
+    0 KSP unpreconditioned resid norm 4.786440058172e-02 true resid norm 4.786440058172e-02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.751252206702e-02 true resid norm 1.751252206702e-02 ||r(i)||/||b|| 3.658778101090e-01
+    2 KSP unpreconditioned resid norm 7.106912253736e-03 true resid norm 7.106912253468e-03 ||r(i)||/||b|| 1.484801265052e-01
+    3 KSP unpreconditioned resid norm 4.838598438201e-03 true resid norm 4.838598433259e-03 ||r(i)||/||b|| 1.010897112353e-01
+    4 KSP unpreconditioned resid norm 9.402733137094e-18 true resid norm 4.587004841479e-03 ||r(i)||/||b|| 9.583332885674e-02
+  Linear solve converged due to CONVERGED_RTOL iterations 4
+ 1 Nonlinear |R| = 9.010475e-02
+    0 KSP unpreconditioned resid norm 9.010475030347e-02 true resid norm 9.010475030347e-02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 4.203968611083e-03 true resid norm 2.055972259145e-01 ||r(i)||/||b|| 2.281757900910e+00
+    2 KSP unpreconditioned resid norm 3.047039944308e-03 true resid norm 2.764593916214e-01 ||r(i)||/||b|| 3.068199963823e+00
+    3 KSP unpreconditioned resid norm 1.987903717965e-03 true resid norm 2.977504181431e-01 ||r(i)||/||b|| 3.304491906811e+00
+    4 KSP unpreconditioned resid norm 1.520024041598e-03 true resid norm 3.828072914150e-01 ||r(i)||/||b|| 4.248469588182e+00
+    5 KSP unpreconditioned resid norm 9.584383261815e-04 true resid norm 4.217813444189e-01 ||r(i)||/||b|| 4.681011189736e+00
+    6 KSP unpreconditioned resid norm 6.171790593690e-04 true resid norm 4.678348303627e-01 ||r(i)||/||b|| 5.192121711531e+00
+    7 KSP unpreconditioned resid norm 9.438734016357e-05 true resid norm 4.801062384168e-01 ||r(i)||/||b|| 5.328312178879e+00
+    8 KSP unpreconditioned resid norm 3.608431834620e-05 true resid norm 4.834431947757e-01 ||r(i)||/||b|| 5.365346367949e+00
+    9 KSP unpreconditioned resid norm 1.250228954521e-05 true resid norm 4.805488751314e-01 ||r(i)||/||b|| 5.333224647012e+00
+   10 KSP unpreconditioned resid norm 1.707134184964e-15 true resid norm 6.036211965558e-01 ||r(i)||/||b|| 6.699105147319e+00
+  Linear solve converged due to CONVERGED_RTOL iterations 10
+ 2 Nonlinear |R| = 6.167561e-01
+
+The true residual track the unpreconditioned residual until we go into a contact
+state. (Note that that last true resid norm is evaulated with an updated
+geometry search (and contact set), so its norm is expected to be wrong).

@@ -776,3 +776,77 @@ Nonlinear solve did not converge due to DIVERGED_LINE_SEARCH iterations 1
 So changing the error at least in the way I'm specifying is doing absolutely
 nothing. I need to try on a simpler problem where the NEWTON solve is definitely
 going to converge with FDP and use `-options_left`.
+
+# 3/5/18
+
+Ok, IMO Zapdos clearly fails because of poor conditioning, witness:
+
+Time Step 55, time = 1.13219e-11
+                dt = 1.88707e-12
+    |residual|_2 of individual variables:
+                  potential: 4.65914e-11
+                  em:        0.414222
+                  emliq:     8.43238
+                  Arp:       0.413861
+                  mean_en:   20.3745
+                  OHm:       0.00329452
+
+ 0 Nonlinear |R| = 2.205826e+01
+    0 KSP unpreconditioned resid norm 2.205825692078e+01 true resid norm 2.205825692078e+01 ||r(i)||/||b|| 1.000000000000e+00
+    0 KSP Residual norm 2.205825692078e+01 % max 1.000000000000e+00 min 1.000000000000e+00 max/min 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 2.384125056288e+00 true resid norm 2.384125056288e+00 ||r(i)||/||b|| 1.080831121358e-01
+    1 KSP Residual norm 2.384125056288e+00 % max 1.005822073456e+00 min 1.005822073456e+00 max/min 1.000000000000e+00
+    2 KSP unpreconditioned resid norm 8.446026833059e-01 true resid norm 8.693782758933e-01 ||r(i)||/||b|| 3.941282754189e-02
+    2 KSP Residual norm 8.446026833059e-01 % max 3.410404257731e+00 min 1.001227270872e+00 max/min 3.406223898356e+00
+    3 KSP unpreconditioned resid norm 8.414424096053e-01 true resid norm 8.435728879437e-01 ||r(i)||/||b|| 3.824295323848e-02
+    3 KSP Residual norm 8.414424096053e-01 % max 1.880665401624e+01 min 9.315117418670e-01 max/min 2.018939018261e+01
+    4 KSP unpreconditioned resid norm 4.302092907871e-01 true resid norm 2.551250542306e-01 ||r(i)||/||b|| 1.156596621151e-02
+    4 KSP Residual norm 4.302092907871e-01 % max 2.693589616887e+01 min 8.816270674693e-01 max/min 3.055248320153e+01
+    5 KSP unpreconditioned resid norm 2.494447433940e-02 true resid norm 3.267145574787e-01 ||r(i)||/||b|| 1.481144038951e-02
+    5 KSP Residual norm 2.494447433940e-02 % max 2.727483225745e+01 min 8.140348617902e-01 max/min 3.350572996035e+01
+    6 KSP unpreconditioned resid norm 3.505727283562e-03 true resid norm 3.772101451243e-01 ||r(i)||/||b|| 1.710063249689e-02
+    6 KSP Residual norm 3.505727283562e-03 % max 3.968085580019e+01 min 5.216696675460e-01 max/min 7.606510071183e+01
+    7 KSP unpreconditioned resid norm 1.426741614424e-04 true resid norm 4.490751218516e-01 ||r(i)||/||b|| 2.035859512673e-02
+    7 KSP Residual norm 1.426741614424e-04 % max 4.038976013438e+01 min 5.070742457323e-01 max/min 7.965255674946e+01
+      Line search: Using full step: fnorm 2.205825692078e+01 gnorm 5.409576886305e+00
+    |residual|_2 of individual variables:
+                  potential: 1.44398e-06
+                  em:        0.00272412
+                  emliq:     5.2894
+                  Arp:       0.0025772
+                  mean_en:   1.13389
+                  OHm:       0.00478482
+
+ 1 Nonlinear |R| = 5.409577e+00
+    0 KSP unpreconditioned resid norm 5.409576886305e+00 true resid norm 5.409576886305e+00 ||r(i)||/||b|| 1.000000000000e+00
+    0 KSP Residual norm 5.409576886305e+00 % max 1.000000000000e+00 min 1.000000000000e+00 max/min 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 3.572102579936e-01 true resid norm 3.572102579936e-01 ||r(i)||/||b|| 6.603293852757e-02
+    1 KSP Residual norm 3.572102579936e-01 % max 9.944054516878e-01 min 9.944054516878e-01 max/min 1.000000000000e+00
+    2 KSP unpreconditioned resid norm 9.409709998170e-02 true resid norm 7.432426507433e-02 ||r(i)||/||b|| 1.373938602527e-02
+    2 KSP Residual norm 9.409709998170e-02 % max 1.088529687336e+01 min 9.894736606428e-01 max/min 1.100109816596e+01
+    3 KSP unpreconditioned resid norm 9.401884704269e-02 true resid norm 7.155770235289e-02 ||r(i)||/||b|| 1.322796659643e-02
+    3 KSP Residual norm 9.401884704269e-02 % max 1.270318472876e+01 min 6.352144178087e-01 max/min 1.999826259074e+01
+    4 KSP unpreconditioned resid norm 2.898141975363e-02 true resid norm 5.044378289867e-02 ||r(i)||/||b|| 9.324903584673e-03
+    4 KSP Residual norm 2.898141975363e-02 % max 1.431702185898e+02 min 6.342005276083e-01 max/min 2.257491319499e+02
+    5 KSP unpreconditioned resid norm 2.094076772138e-02 true resid norm 8.821712062322e-02 ||r(i)||/||b|| 1.630758236315e-02
+    5 KSP Residual norm 2.094076772138e-02 % max 1.696704410372e+02 min 2.905480631076e-01 max/min 5.839668632530e+02
+    6 KSP unpreconditioned resid norm 2.075085667714e-02 true resid norm 8.870406130169e-02 ||r(i)||/||b|| 1.639759692228e-02
+    6 KSP Residual norm 2.075085667714e-02 % max 3.094260510923e+02 min 1.183064914499e-01 max/min 2.615461309859e+03
+    7 KSP unpreconditioned resid norm 2.032077074790e-02 true resid norm 2.242633852539e-01 ||r(i)||/||b|| 4.145673311745e-02
+    7 KSP Residual norm 2.032077074790e-02 % max 3.125720663423e+02 min 2.614556971125e-02 max/min 1.195506809736e+04
+    8 KSP unpreconditioned resid norm 1.888566083704e-02 true resid norm 1.643064951885e+00 ||r(i)||/||b|| 3.037326183577e-01
+    8 KSP Residual norm 1.888566083704e-02 % max 3.219988857588e+02 min 3.930828783756e-03 max/min 8.191628368284e+04
+    9 KSP unpreconditioned resid norm 4.941432315092e-04 true resid norm 1.320663938108e+01 ||r(i)||/||b|| 2.441344241638e+00
+    9 KSP Residual norm 4.941432315092e-04 % max 3.220011525510e+02 min 1.508550904326e-03 max/min 2.134506377130e+05
+   10 KSP unpreconditioned resid norm 1.242091202663e-04 true resid norm 1.334597250807e+01 ||r(i)||/||b|| 2.467100993028e+00
+   10 KSP Residual norm 1.242091202663e-04 % max 3.391809032844e+02 min 1.398430318278e-03 max/min 2.425440144218e+05
+   11 KSP unpreconditioned resid norm 2.546092229864e-06 true resid norm 1.333058199913e+01 ||r(i)||/||b|| 2.464255944467e+00
+   11 KSP Residual norm 2.546092229864e-06 % max 3.392316538481e+02 min 1.395205631358e-03 max/min 2.431409723583e+05
+      Line search: gnorm after quadratic fit 5.760190942666e+00
+      Line search: Cubic step no good, shrinking lambda, current gnorm 5.460453562498e+00 lambda=1.9085662507565725e-02
+      Line search: Cubic step no good, shrinking lambda, current gnorm 5.419720425842e+00 lambda=4.0563605904697974e-03
+      Line search: Cubic step no good, shrinking lambda, current gnorm 5.411743407567e+00 lambda=8.7876011150836105e-04
+      Line search: unable to find good step length! After 3 tries
+      Line search: fnorm=5.4095768863054809e+00, gnorm=5.4117434075673048e+00, ynorm=4.2119679961219519e-01, minlambda=1.0000000000000000e-03, lambda=8.7876011150836105e-04, initial slope=-1.3263729134982935e+01
+Nonlinear solve did not converge due to DIVERGED_LINE_SEARCH iterations 1
+ Solve Did NOT Converge!

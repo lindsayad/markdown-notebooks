@@ -6,3 +6,16 @@ refers to the Jacobian operator (matrix if not using matrix-free methods).
 As evidenced in PCApplyBAorAB, the Jacobian matrix multiplication with the
 vector is explicitly done! And then the preconditioner is applied in the case of
 left preconditioning.
+
+# 1/10/17
+
+Ok, the key petsc example to look at is indeed example 7 in
+examples/tutorials. This demonstrates how to set a different function for
+matrix-free differencing. Ugh, so much effort and it's in front of my nose.
+
+# 1/11/17
+
+Ok, the function I set will be called with these arguments:
+(*ctx->func)(ctx->funcctx,U,F)
+
+The function context is set with the last argument to `MatMFFDSetFunction`. For us this should be the PetscNonlinearSolver.

@@ -1,3 +1,14 @@
+MOOSE directory of directories:
+projects: petsc debug stack, HEAD (e.g. uses a debug build of petsc, so
+everything might as well be debug)
+projects3: petsc opt stack, HEAD (so we can use opt and debug for moose/libmesh)
+
+projects-dbg: petsc debug stack, feature (e.g. uses a debug build of petsc, so
+everything might as well be debug)
+projects4: petsc opt stack, feature (so we can use opt and debug for moose/libmesh)
+projects2: petsc opt stack, feature (so we can use opt and debug for moose/libmesh)
+
+
 Print position in vector in LLDB:
 ```
 p elem_num_map.__begin_[8297]
@@ -7,6 +18,24 @@ How to access the multi app FEProblem's time from the master app's FEProblem:
 ```
 p _multi_apps._active_objects.__begin_[0].__begin_[0].__ptr_->_apps.__begin_[0].__ptr_->_executioner.__ptr_->_fe_problem._time
 ```
+
+`b __cxa_throw` sets a breakpoint at `throw`
+
+To apply a patch after git crashes during a rebase:
+
+git apply patch-name
+
+PBS run_tests command:
+./run_tests -c -q -t --no-report --sep-files --queue-project neams --pbs assess
+-i assessment 2>&1 >> assess_log
+
+etags moose:
+
+find . \( -iname "*build*" -prune \) -o \( -iname "*.h" -o -iname "*.C" \) -print | etags -
+
+icecream:
+
+ssh -Y icecream.inl.gov && icemon &
 
 # 9/6/17
 
@@ -4095,3 +4124,2134 @@ Postprocessor Values:
 
 Look adding in temperature things, and things are starting to look tough again!
 Next task!
+
+# 1/8/18
+
+Failing linear solve:
+ 0 Nonlinear |R| = 1.602900e+02
+    0 KSP unpreconditioned resid norm 1.602900149382e+02 true resid norm 1.602900149382e+02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.594651817350e+02 true resid norm 1.594651802172e+02 ||r(i)||/||b|| 9.948541103988e-01
+    2 KSP unpreconditioned resid norm 1.586635739809e+02 true resid norm 1.587997593310e+02 ||r(i)||/||b|| 9.907027545801e-01
+    3 KSP unpreconditioned resid norm 1.467847192430e+02 true resid norm 5.440916350914e+02 ||r(i)||/||b|| 3.394420016126e+00
+    4 KSP unpreconditioned resid norm 1.455917192916e+02 true resid norm 6.206391743621e+02 ||r(i)||/||b|| 3.871976520817e+00
+    5 KSP unpreconditioned resid norm 1.223033935014e+02 true resid norm 2.419546368594e+03 ||r(i)||/||b|| 1.509480406204e+01
+    6 KSP unpreconditioned resid norm 8.813516974347e+01 true resid norm 1.882281778955e+03 ||r(i)||/||b|| 1.174297587832e+01
+    7 KSP unpreconditioned resid norm 8.794997713634e+01 true resid norm 1.886432145929e+03 ||r(i)||/||b|| 1.176886873868e+01
+    8 KSP unpreconditioned resid norm 8.427470829218e+01 true resid norm 2.936597377116e+03 ||r(i)||/||b|| 1.832052594323e+01
+    9 KSP unpreconditioned resid norm 6.459510689520e+01 true resid norm 1.133823387262e+04 ||r(i)||/||b|| 7.073574655906e+01
+   10 KSP unpreconditioned resid norm 4.710048084920e+01 true resid norm 4.747571870544e+04 ||r(i)||/||b|| 2.961863764486e+02
+   11 KSP unpreconditioned resid norm 4.689195102232e+01 true resid norm 4.812481827343e+04 ||r(i)||/||b|| 3.002359085934e+02
+   12 KSP unpreconditioned resid norm 3.992813317864e+01 true resid norm 9.267257062334e+04 ||r(i)||/||b|| 5.781556053823e+02
+   13 KSP unpreconditioned resid norm 1.990642915114e+01 true resid norm 4.527871922676e+05 ||r(i)||/||b|| 2.824799738412e+03
+   14 KSP unpreconditioned resid norm 2.348494303877e+00 true resid norm 4.654803075725e+05 ||r(i)||/||b|| 2.903988172638e+03
+   15 KSP unpreconditioned resid norm 5.120050709300e-01 true resid norm 4.761141534357e+05 ||r(i)||/||b|| 2.970329459507e+03
+   16 KSP unpreconditioned resid norm 2.982448174591e-01 true resid norm 4.755545133475e+05 ||r(i)||/||b|| 2.966838037484e+03
+   17 KSP unpreconditioned resid norm 9.272306041853e-02 true resid norm 4.758549535672e+05 ||r(i)||/||b|| 2.968712391416e+03
+   18 KSP unpreconditioned resid norm 1.234915147494e-03 true resid norm 4.757988528961e+05 ||r(i)||/||b|| 2.968362396619e+03
+
+Bad residual:
+  0.
+  0.
+  0.
+  1.46237e-08
+  1.31039e-06
+  1.26006e-08
+  9.89361e-09
+  -56.6667
+  1.78473e-06
+  1.09714e-08
+  3.47328e-09
+  -56.6667
+  0.
+  0.
+  0.
+  1.46237e-08
+  0.
+  0.
+  0.
+  1.46237e-08
+  7.07007e-07
+  9.38382e-09
+  1.88573e-09
+  -56.6667
+  9.51155e-07
+  1.41793e-08
+  8.31493e-09
+  -56.6667
+  0.
+  0.
+  0.
+  1.46237e-08
+  0.
+  0.
+  0.
+  7.96613e-09
+  0.999999
+  -2.75764e-08
+  -1.76383e-08
+  -56.6667
+  0.999999
+  -2.71673e-08
+  -1.38036e-08
+  -56.6667
+  0.
+  0.
+  0.
+  7.96613e-09
+  0.
+  0.
+  0.
+  7.96613e-09
+  0.999999
+  -3.02493e-08
+  -1.68856e-08
+  -56.6667
+  0.999999
+  -3.06585e-08
+  -1.45562e-08
+  -56.6667
+  0.
+  0.
+  0.
+  7.96613e-09
+
+b:
+  0.
+  0.
+  0.
+  -3.33956e-15
+  -3.59712e-18
+  -1.19904e-18
+  1.19904e-18
+  -56.6667
+  -3.59712e-18
+  -1.19904e-18
+  -1.19904e-18
+  -56.6667
+  0.
+  0.
+  0.
+  1.34116e-15
+  0.
+  0.
+  0.
+  -1.46162e-15
+  -3.59712e-18
+  1.19904e-18
+  1.19904e-18
+  -56.6667
+  -3.59712e-18
+  1.19904e-18
+  -1.19904e-18
+  -56.6667
+  0.
+  0.
+  0.
+  3.46002e-15
+  0.
+  0.
+  0.
+  -3.14155e-15
+  1.
+  -3.9968e-20
+  3.9968e-20
+  -56.6667
+  1.
+  3.9968e-20
+  3.9968e-20
+  -56.6667
+  0.
+  0.
+  0.
+  1.59813e-15
+  0.
+  0.
+  0.
+  2.20813e-15
+  1.
+  -3.9968e-20
+  -3.9968e-20
+  -56.6667
+  1.
+  3.9968e-20
+  -3.9968e-20
+  -56.6667
+  0.
+  0.
+  0.
+
+v:
+  0.
+  0.
+  0.
+  10.3057
+  923.465
+  8.87995
+  6.97225
+  -23.6671
+  1257.74
+  7.73177
+  2.4477
+  -23.6671
+  0.
+  0.
+  0.
+  10.3056
+  0.
+  0.
+  0.
+  10.3057
+  498.244
+  6.61299
+  1.32892
+  -23.6671
+  670.3
+  9.99249
+  5.85972
+  -23.6671
+  0.
+  0.
+  0.
+  10.3056
+  0.
+  0.
+  0.
+  5.61391
+  -821.952
+  -19.4337
+  -12.4301
+  -23.6671
+  -821.778
+  -19.1454
+  -9.72772
+  -23.6671
+  0.
+  0.
+  0.
+  5.61391
+  0.
+  0.
+  0.
+  5.61391
+  -822.788
+  -21.3173
+  -11.8996
+  -23.6671
+  -821.997
+  -21.6057
+  -10.2581
+  -23.6671
+  0.
+  0.
+  0.
+  5.61391
+
+Solve that actually makes some progress (with PJFNK, FDP, -pc_type bjacobi):
+ 0 Nonlinear |R| = 1.602900e+02
+    0 KSP unpreconditioned resid norm 1.602900149382e+02 true resid norm 1.602900149382e+02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.599671499368e+02 true resid norm 1.599671499378e+02 ||r(i)||/||b|| 9.979857447728e-01
+    2 KSP unpreconditioned resid norm 1.599608879658e+02 true resid norm 1.610107178943e+02 ||r(i)||/||b|| 1.004496243614e+00
+    3 KSP unpreconditioned resid norm 3.181879201229e+00 true resid norm 2.229717380990e+03 ||r(i)||/||b|| 1.391051951583e+01
+    4 KSP unpreconditioned resid norm 1.750714636783e-02 true resid norm 2.223510353009e+03 ||r(i)||/||b|| 1.387179578133e+01
+    5 KSP unpreconditioned resid norm 4.603842515535e-04 true resid norm 2.223496256476e+03 ||r(i)||/||b|| 1.387170783740e+01
+  Linear solve converged due to CONVERGED_RTOL iterations 5
+      Line search: Using full step: fnorm 1.602900149382e+02 gnorm 2.848229364226e-02
+ 1 Nonlinear |R| = 2.848229e-02
+    0 KSP unpreconditioned resid norm 2.848229364226e-02 true resid norm 2.848229364226e-02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 2.847665574424e-02 true resid norm 2.848187577217e-02 ||r(i)||/||b|| 9.999853287765e-01
+    2 KSP unpreconditioned resid norm 2.680115085788e-02 true resid norm 1.872178407740e-01 ||r(i)||/||b|| 6.573130771188e+00
+    3 KSP unpreconditioned resid norm 2.007162991418e-02 true resid norm 2.176327964035e+00 ||r(i)||/||b|| 7.640985629070e+01
+    4 KSP unpreconditioned resid norm 1.568616426536e-04 true resid norm 4.650601808486e+00 ||r(i)||/||b|| 1.632804530034e+02
+    5 KSP unpreconditioned resid norm 1.466325219419e-04 true resid norm 4.649564242550e+00 ||r(i)||/||b|| 1.632440245490e+02
+    6 KSP unpreconditioned resid norm 1.195816525192e-04 true resid norm 4.649111986576e+00 ||r(i)||/||b|| 1.632281460534e+02
+    7 KSP unpreconditioned resid norm 1.055346315444e-04 true resid norm 4.648784124622e+00 ||r(i)||/||b|| 1.632166349737e+02
+    8 KSP unpreconditioned resid norm 9.504592910450e-05 true resid norm 4.648604238169e+00 ||r(i)||/||b|| 1.632103192445e+02
+    9 KSP unpreconditioned resid norm 8.725167536409e-05 true resid norm 4.648479427200e+00 ||r(i)||/||b|| 1.632059371898e+02
+   10 KSP unpreconditioned resid norm 8.108499312439e-05 true resid norm 4.648393889082e+00 ||r(i)||/||b|| 1.632029339865e+02
+   11 KSP unpreconditioned resid norm 7.606446422048e-05 true resid norm 4.648333111420e+00 ||r(i)||/||b|| 1.632008001112e+02
+   12 KSP unpreconditioned resid norm 7.186965005058e-05 true resid norm 4.648290322227e+00 ||r(i)||/||b|| 1.631992978027e+02
+   13 KSP unpreconditioned resid norm 6.829646207508e-05 true resid norm 4.648261026596e+00 ||r(i)||/||b|| 1.631982692468e+02
+   14 KSP unpreconditioned resid norm 6.520439477987e-05 true resid norm 4.648242272456e+00 ||r(i)||/||b|| 1.631976107977e+02
+   15 KSP unpreconditioned resid norm 6.249397178342e-05 true resid norm 4.648231874294e+00 ||r(i)||/||b|| 1.631972457231e+02
+   16 KSP unpreconditioned resid norm 6.009243004956e-05 true resid norm 4.648228062221e+00 ||r(i)||/||b|| 1.631971118830e+02
+   17 KSP unpreconditioned resid norm 5.794521577011e-05 true resid norm 4.648229312725e+00 ||r(i)||/||b|| 1.631971557876e+02
+   18 KSP unpreconditioned resid norm 5.601051763586e-05 true resid norm 4.648234276869e+00 ||r(i)||/||b|| 1.631973300764e+02
+   19 KSP unpreconditioned resid norm 5.425566058730e-05 true resid norm 4.648241776307e+00 ||r(i)||/||b|| 1.631975933781e+02
+   20 KSP unpreconditioned resid norm 5.265465719768e-05 true resid norm 4.648250843643e+00 ||r(i)||/||b|| 1.631979117281e+02
+   21 KSP unpreconditioned resid norm 5.118650792365e-05 true resid norm 4.648260710488e+00 ||r(i)||/||b|| 1.631982581484e+02
+   22 KSP unpreconditioned resid norm 4.983400965297e-05 true resid norm 4.648270813056e+00 ||r(i)||/||b|| 1.631986128448e+02
+   23 KSP unpreconditioned resid norm 4.858290021493e-05 true resid norm 4.648280774836e+00 ||r(i)||/||b|| 1.631989625982e+02
+   24 KSP unpreconditioned resid norm 4.742123501403e-05 true resid norm 4.648290356909e+00 ||r(i)||/||b|| 1.631992990203e+02
+   25 KSP unpreconditioned resid norm 4.633892489790e-05 true resid norm 4.648299429171e+00 ||r(i)||/||b|| 1.631996175432e+02
+   26 KSP unpreconditioned resid norm 4.532738402369e-05 true resid norm 4.648307936198e+00 ||r(i)||/||b|| 1.631999162209e+02
+   27 KSP unpreconditioned resid norm 4.437925707050e-05 true resid norm 4.648315869992e+00 ||r(i)||/||b|| 1.632001947727e+02
+   28 KSP unpreconditioned resid norm 4.348820600102e-05 true resid norm 4.648323248438e+00 ||r(i)||/||b|| 1.632004538265e+02
+   29 KSP unpreconditioned resid norm 4.264873778831e-05 true resid norm 4.648330105297e+00 ||r(i)||/||b|| 1.632006945676e+02
+   30 KSP unpreconditioned resid norm 4.648336483097e+00 true resid norm 1.814175181757e+02 ||r(i)||/||b|| 6.369484159325e+03
+   31 KSP unpreconditioned resid norm 1.186350170075e+00 true resid norm 2.997115815579e+02 ||r(i)||/||b|| 1.052273336278e+04
+   32 KSP unpreconditioned resid norm 1.046281089570e+00 true resid norm 1.340946202100e+03 ||r(i)||/||b|| 4.707999358977e+04
+   33 KSP unpreconditioned resid norm 5.011647603945e-03 true resid norm 1.451293794028e+02 ||r(i)||/||b|| 5.095424589943e+03
+   34 KSP unpreconditioned resid norm 9.048268301703e-07 true resid norm 1.567998870127e+02 ||r(i)||/||b|| 5.505170650303e+03
+   35 KSP unpreconditioned resid norm 7.664751845509e-11 true resid norm 1.568027504945e+02 ||r(i)||/||b|| 5.505271185807e+03
+  Linear solve converged due to CONVERGED_RTOL iterations 35
+      Line search: Using full step: fnorm 2.848229364226e-02 gnorm 1.652796105268e-02
+ 2 Nonlinear |R| = 1.652796e-02
+    0 KSP unpreconditioned resid norm 1.652796105268e-02 true resid norm 1.652796105268e-02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 7.088113791034e-03 true resid norm 3.069173917373e-02 ||r(i)||/||b|| 1.856958585267e+00
+    2 KSP unpreconditioned resid norm 7.081748071372e-03 true resid norm 1.104095439862e+01 ||r(i)||/||b|| 6.680167241095e+02
+    3 KSP unpreconditioned resid norm 6.999321152146e-03 true resid norm 2.865385606521e+01 ||r(i)||/||b|| 1.733659461919e+03
+    4 KSP unpreconditioned resid norm 6.919709285620e-03 true resid norm 6.599985343645e+01 ||r(i)||/||b|| 3.993224162744e+03
+    5 KSP unpreconditioned resid norm 6.842753614241e-03 true resid norm 1.017442513934e+02 ||r(i)||/||b|| 6.155886444139e+03
+    6 KSP unpreconditioned resid norm 6.768309651503e-03 true resid norm 1.359513499281e+02 ||r(i)||/||b|| 8.225536682645e+03
+    7 KSP unpreconditioned resid norm 6.696243674625e-03 true resid norm 1.687128035879e+02 ||r(i)||/||b|| 1.020772030199e+04
+    8 KSP unpreconditioned resid norm 6.626431719980e-03 true resid norm 2.001167843285e+02 ||r(i)||/||b|| 1.210777201680e+04
+    9 KSP unpreconditioned resid norm 6.558758686416e-03 true resid norm 2.302453358645e+02 ||r(i)||/||b|| 1.393065576151e+04
+   10 KSP unpreconditioned resid norm 6.493117536794e-03 true resid norm 2.591743272638e+02 ||r(i)||/||b|| 1.568096188258e+04
+   11 KSP unpreconditioned resid norm 6.429408585956e-03 true resid norm 2.869738522180e+02 ||r(i)||/||b|| 1.736293129584e+04
+   12 KSP unpreconditioned resid norm 6.367538863851e-03 true resid norm 3.137087054746e+02 ||r(i)||/||b|| 1.898048431229e+04
+   13 KSP unpreconditioned resid norm 6.307421545034e-03 true resid norm 3.394388514720e+02 ||r(i)||/||b|| 2.053724899218e+04
+   14 KSP unpreconditioned resid norm 6.248975436114e-03 true resid norm 3.642198482306e+02 ||r(i)||/||b|| 2.203658679191e+04
+   15 KSP unpreconditioned resid norm 6.192124514575e-03 true resid norm 3.881032424737e+02 ||r(i)||/||b|| 2.348161647022e+04
+   16 KSP unpreconditioned resid norm 6.136797512983e-03 true resid norm 4.111369204082e+02 ||r(i)||/||b|| 2.487523531171e+04
+   17 KSP unpreconditioned resid norm 6.082927543272e-03 true resid norm 4.333654269722e+02 ||r(i)||/||b|| 2.622013844242e+04
+   18 KSP unpreconditioned resid norm 6.030451756714e-03 true resid norm 4.548302477683e+02 ||r(i)||/||b|| 2.751883588778e+04
+   19 KSP unpreconditioned resid norm 5.979311035592e-03 true resid norm 4.755700666639e+02 ||r(i)||/||b|| 2.877366815835e+04
+   20 KSP unpreconditioned resid norm 5.929449713187e-03 true resid norm 4.956210040263e+02 ||r(i)||/||b|| 2.998682066388e+04
+   21 KSP unpreconditioned resid norm 5.880815319013e-03 true resid norm 5.150168179349e+02 ||r(i)||/||b|| 3.116033588737e+04
+   22 KSP unpreconditioned resid norm 5.833358346667e-03 true resid norm 5.337890964632e+02 ||r(i)||/||b|| 3.229612501880e+04
+   23 KSP unpreconditioned resid norm 5.787032041957e-03 true resid norm 5.519674298924e+02 ||r(i)||/||b|| 3.339597837465e+04
+   24 KSP unpreconditioned resid norm 5.741792209274e-03 true resid norm 5.695795652708e+02 ||r(i)||/||b|| 3.446157474932e+04
+   25 KSP unpreconditioned resid norm 5.697597034311e-03 true resid norm 5.866515504207e+02 ||r(i)||/||b|| 3.549449012802e+04
+   26 KSP unpreconditioned resid norm 5.654406921633e-03 true resid norm 6.032078571232e+02 ||r(i)||/||b|| 3.649620513992e+04
+   27 KSP unpreconditioned resid norm 5.612184345518e-03 true resid norm 6.192715032059e+02 ||r(i)||/||b|| 3.746811244485e+04
+   28 KSP unpreconditioned resid norm 5.570893712931e-03 true resid norm 6.348641528438e+02 ||r(i)||/||b|| 3.841152280189e+04
+   29 KSP unpreconditioned resid norm 5.530501237386e-03 true resid norm 6.500062239378e+02 ||r(i)||/||b|| 3.932767156614e+04
+   30 KSP unpreconditioned resid norm 6.647169687370e+02 true resid norm 6.647169687370e+02 ||r(i)||/||b|| 4.021772356665e+04
+  Linear solve did not converge due to DIVERGED_DTOL iterations 30
+      Line search: gnorm after quadratic fit 6.899607364361e-03
+      Line search: Cubic step no good, shrinking lambda, current gnorm 6.712313357669e-03 lambda=2.1133200712480757e-01
+      Line search: Cubically determined step, current gnorm 6.888729499309e-03 lambda=9.2205704831343577e-02
+ 3 Nonlinear |R| = 6.888729e-03
+    0 KSP unpreconditioned resid norm 6.888729499309e-03 true resid norm 6.888729499309e-03 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 7.570336917535e-06 true resid norm 7.570336917535e-06 ||r(i)||/||b|| 1.098945301640e-03
+    2 KSP unpreconditioned resid norm 7.117100872228e-10 true resid norm 9.720593837431e-10 ||r(i)||/||b|| 1.411086592732e-07
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+      Line search: Using full step: fnorm 6.888729499309e-03 gnorm 6.683782667303e-06
+ 4 Nonlinear |R| = 6.683783e-06
+    0 KSP unpreconditioned resid norm 6.683782667303e-06 true resid norm 6.683782667303e-06 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 6.671630640268e-06 true resid norm 6.671630640276e-06 ||r(i)||/||b|| 9.981818638289e-01
+    2 KSP unpreconditioned resid norm 6.504446574071e-09 true resid norm 1.689031619885e+01 ||r(i)||/||b|| 2.527059457135e+06
+    3 KSP unpreconditioned resid norm 3.575903788813e-09 true resid norm 1.689075259859e+01 ||r(i)||/||b|| 2.527124749466e+06
+    4 KSP unpreconditioned resid norm 3.133135406431e-09 true resid norm 1.689065477890e+01 ||r(i)||/||b|| 2.527110114087e+06
+    5 KSP unpreconditioned resid norm 2.822403664791e-09 true resid norm 1.689059401062e+01 ||r(i)||/||b|| 2.527101022188e+06
+    6 KSP unpreconditioned resid norm 2.588907649210e-09 true resid norm 1.689055259444e+01 ||r(i)||/||b|| 2.527094825670e+06
+    7 KSP unpreconditioned resid norm 2.405176849519e-09 true resid norm 1.689052255588e+01 ||r(i)||/||b|| 2.527090331424e+06
+    8 KSP unpreconditioned resid norm 2.255723178669e-09 true resid norm 1.689049977274e+01 ||r(i)||/||b|| 2.527086922704e+06
+    9 KSP unpreconditioned resid norm 2.131062809744e-09 true resid norm 1.689048189961e+01 ||r(i)||/||b|| 2.527084248601e+06
+   10 KSP unpreconditioned resid norm 2.025020800417e-09 true resid norm 1.689046750370e+01 ||r(i)||/||b|| 2.527082094744e+06
+   11 KSP unpreconditioned resid norm 1.933380880740e-09 true resid norm 1.689045566015e+01 ||r(i)||/||b|| 2.527080322760e+06
+   12 KSP unpreconditioned resid norm 1.853152831515e-09 true resid norm 1.689044574555e+01 ||r(i)||/||b|| 2.527078839379e+06
+   13 KSP unpreconditioned resid norm 1.782149156690e-09 true resid norm 1.689043732406e+01 ||r(i)||/||b|| 2.527077579390e+06
+   14 KSP unpreconditioned resid norm 1.718727706859e-09 true resid norm 1.689043008204e+01 ||r(i)||/||b|| 2.527076495870e+06
+   15 KSP unpreconditioned resid norm 1.661628471741e-09 true resid norm 1.689042378788e+01 ||r(i)||/||b|| 2.527075554163e+06
+   16 KSP unpreconditioned resid norm 1.609866357327e-09 true resid norm 1.689041826701e+01 ||r(i)||/||b|| 2.527074728153e+06
+   17 KSP unpreconditioned resid norm 1.562658580057e-09 true resid norm 1.689041338511e+01 ||r(i)||/||b|| 2.527073997743e+06
+   18 KSP unpreconditioned resid norm 1.519374201138e-09 true resid norm 1.689040903731e+01 ||r(i)||/||b|| 2.527073347244e+06
+   19 KSP unpreconditioned resid norm 1.479498240803e-09 true resid norm 1.689040514054e+01 ||r(i)||/||b|| 2.527072764226e+06
+   20 KSP unpreconditioned resid norm 1.442605641569e-09 true resid norm 1.689040162805e+01 ||r(i)||/||b|| 2.527072238700e+06
+   21 KSP unpreconditioned resid norm 1.408342037918e-09 true resid norm 1.689039844569e+01 ||r(i)||/||b|| 2.527071762570e+06
+   22 KSP unpreconditioned resid norm 1.376409324779e-09 true resid norm 1.689039554899e+01 ||r(i)||/||b|| 2.527071329177e+06
+   23 KSP unpreconditioned resid norm 1.346554670825e-09 true resid norm 1.689039290117e+01 ||r(i)||/||b|| 2.527070933020e+06
+   24 KSP unpreconditioned resid norm 1.318562045224e-09 true resid norm 1.689039047142e+01 ||r(i)||/||b|| 2.527070569491e+06
+   25 KSP unpreconditioned resid norm 1.292245605243e-09 true resid norm 1.689038823392e+01 ||r(i)||/||b|| 2.527070234726e+06
+   26 KSP unpreconditioned resid norm 1.267444480486e-09 true resid norm 1.689038616671e+01 ||r(i)||/||b|| 2.527069925439e+06
+   27 KSP unpreconditioned resid norm 1.244018617747e-09 true resid norm 1.689038425104e+01 ||r(i)||/||b|| 2.527069638823e+06
+   28 KSP unpreconditioned resid norm 1.221845440869e-09 true resid norm 1.689038247082e+01 ||r(i)||/||b|| 2.527069372475e+06
+   29 KSP unpreconditioned resid norm 1.200817143075e-09 true resid norm 1.689038081224e+01 ||r(i)||/||b|| 2.527069124324e+06
+   30 KSP unpreconditioned resid norm 1.689037926319e+01 true resid norm 1.689037926284e+01 ||r(i)||/||b|| 2.527068892510e+06
+  Linear solve did not converge due to DIVERGED_DTOL iterations 30
+      Line search: gnorm after quadratic fit 7.488119005813e-01
+      Line search: Cubic step no good, shrinking lambda, current gnorm 7.488429463787e-01 lambda=1.0000000000000002e-02
+      Line search: Cubic step no good, shrinking lambda, current gnorm 7.488460509579e-01 lambda=1.0000000000000002e-03
+      Line search: Cubic step no good, shrinking lambda, current gnorm 7.488463614158e-01 lambda=1.0000000000000003e-04
+      Line search: Cubic step no good, shrinking lambda, current gnorm 7.488463924616e-01 lambda=1.0000000000000004e-05
+      Line search: Cubic step no good, shrinking lambda, current gnorm 7.488463955662e-01 lambda=1.0000000000000004e-06
+      Line search: Cubic step no good, shrinking lambda, current gnorm 7.488463958767e-01 lambda=1.0000000000000005e-07
+      Line search: Cubic step no good, shrinking lambda, current gnorm 7.488463959077e-01 lambda=1.0000000000000005e-08
+      Line search: Cubic step no good, shrinking lambda, current gnorm 7.488463959108e-01 lambda=1.0000000000000005e-09
+      Line search: Cubic step no good, shrinking lambda, current gnorm 7.488463959111e-01 lambda=1.0000000000000006e-10
+      Line search: Cubic step no good, shrinking lambda, current gnorm 7.488463959112e-01 lambda=1.0000000000000006e-11
+      Line search: Cubic step no good, shrinking lambda, current gnorm 7.488463959112e-01 lambda=1.0000000000000006e-12
+      Line search: Cubic step no good, shrinking lambda, current gnorm 7.488463959112e-01 lambda=1.0000000000000007e-13
+      Line search: unable to find good step length! After 12 tries
+      Line search: fnorm=6.6837826673030203e-06, gnorm=7.4884639591115720e-01, ynorm=8.4202052367694780e-06, minlambda=9.9999999999999998e-13, lambda=1.0000000000000007e-13, initial slope=-6.8044408242173388e-06
+Nonlinear solve did not converge due to DIVERGED_LINE_SEARCH iterations 4
+
+With an SMP preconditioner, we get a negative Jacobian after one non-linear iteration.
+
+On the 4th non-linear residual:
+b (residual):
+  0.
+  0.
+  0.
+  4.20442e-07
+  -2.73709e-06
+  -1.19884e-06
+  -5.49406e-07
+  -9.9476e-13
+  -4.70745e-06
+  -1.51275e-06
+  -8.1031e-07
+  -9.9476e-13
+  0.
+  0.
+  0.
+  7.13222e-07
+  0.
+  0.
+  0.
+  1.4143e-07
+  -1.59327e-06
+  -7.22038e-07
+  -1.48509e-07
+  -9.9476e-13
+  -2.12521e-06
+  -9.01665e-07
+  -7.16287e-07
+  -9.9476e-13
+  0.
+  0.
+  0.
+  3.11961e-07
+  0.
+  0.
+  0.
+  -3.76809e-07
+  2.4275e-07
+  1.11118e-07
+  1.58137e-07
+  -9.9476e-13
+  5.18644e-08
+  2.88308e-08
+  -3.88204e-09
+  -9.9476e-13
+  0.
+  0.
+  0.
+  -1.89683e-08
+  0.
+  0.
+  0.
+  -2.08802e-07
+  3.32957e-07
+  1.76702e-07
+  8.80909e-08
+  -9.9476e-13
+  1.77794e-07
+  1.70435e-07
+  3.83617e-08
+  -9.9476e-13
+  0.
+  0.
+  0.
+  3.34843e-07
+
+1st perturbed residual:
+  0.
+  0.
+  0.
+  4.39109e-07
+  -2.4425e-06
+  -1.25199e-06
+  -5.73765e-07
+  -1.0516e-12
+  -4.33451e-06
+  -1.57982e-06
+  -8.46236e-07
+  -1.0516e-12
+  0.
+  0.
+  0.
+  7.44872e-07
+  0.
+  0.
+  0.
+  1.47684e-07
+  -1.45537e-06
+  -7.54051e-07
+  -1.55093e-07
+  -1.0516e-12
+  -1.92782e-06
+  -9.41643e-07
+  -7.48044e-07
+  -1.0516e-12
+  0.
+  0.
+  0.
+  3.25652e-07
+  0.
+  0.
+  0.
+  -3.93629e-07
+  0.374506
+  3.25066e-07
+  6.08453e-07
+  -1.0516e-12
+  0.373989
+  2.38843e-07
+  2.14939e-07
+  -1.0516e-12
+  0.
+  0.
+  0.
+  -1.97861e-08
+  0.
+  0.
+  0.
+  -2.17889e-07
+  0.374907
+  6.18028e-07
+  5.35776e-07
+  -1.0516e-12
+  0.374321
+  6.10809e-07
+  2.59249e-07
+  -1.0516e-12
+  0.
+  0.
+  0.
+  3.49551e-07
+
+Differenced and scaled by h:
+  0.
+  0.
+  0.
+  1.00421e-14
+  1.58479e-13
+  -2.85934e-14
+  -1.31042e-14
+  -3.05796e-20
+  2.0063e-13
+  -3.60814e-14
+  -1.93267e-14
+  -3.05796e-20
+  0.
+  0.
+  0.
+  1.70264e-14
+  0.
+  0.
+  0.
+  3.36458e-15
+  7.41836e-14
+  -1.72219e-14
+  -3.54187e-15
+  -3.05796e-20
+  1.06187e-13
+  -2.15068e-14
+  -1.70843e-14
+  -3.05796e-20
+  0.
+  0.
+  0.
+  7.36505e-15
+  0.
+  0.
+  0.
+  -9.04876e-15
+  2.0147e-07
+  1.15096e-13
+  2.42253e-13
+  -3.05796e-20
+  2.01192e-07
+  1.12979e-13
+  1.17718e-13
+  -3.05796e-20
+  0.
+  0.
+  0.
+  -4.39966e-16
+  0.
+  0.
+  0.
+  -4.88858e-15
+  2.01686e-07
+  2.37417e-13
+  2.40837e-13
+  -3.05796e-20
+  2.01371e-07
+  2.36905e-13
+  1.18829e-13
+  -3.05796e-20
+  0.
+  0.
+  0.
+  7.91233e-15
+ This looks fine
+
+2nd perturbed residual:
+  0.
+  0.
+  0.
+  4.39109e-07
+  -2.44251e-06
+  -1.25199e-06
+  -5.73765e-07
+  -1.0516e-12
+  -4.33453e-06
+  -1.57982e-06
+  -8.46236e-07
+  -1.0516e-12
+  0.
+  0.
+  0.
+  7.44872e-07
+  0.
+  0.
+  0.
+  1.47684e-07
+  -1.45538e-06
+  -7.54051e-07
+  -1.55093e-07
+  -1.0516e-12
+  -1.92783e-06
+  -9.41643e-07
+  -7.48044e-07
+  -1.0516e-12
+  0.
+  0.
+  0.
+  3.25652e-07
+  0.
+  0.
+  0.
+  -3.93629e-07
+  0.374506
+  3.25066e-07
+  6.08453e-07
+  -1.0516e-12
+  0.373989
+  2.38843e-07
+  2.14939e-07
+  -1.0516e-12
+  0.
+  0.
+  0.
+  -1.97861e-08
+  0.
+  0.
+  0.
+  -2.17889e-07
+  0.374907
+  6.18028e-07
+  5.35776e-07
+  -1.0516e-12
+  0.374321
+  6.10809e-07
+  2.59249e-07
+  -1.0516e-12
+  0.
+  0.
+  0.
+  3.49551e-07
+
+difference and scaled by h:
+  0.
+  0.
+  0.
+  4.21027e-07
+  6.64402e-06
+  -1.19881e-06
+  -5.49406e-07
+  -1.28208e-12
+  8.41112e-06
+  -1.51275e-06
+  -8.10294e-07
+  -1.28208e-12
+  0.
+  0.
+  0.
+  7.13851e-07
+  0.
+  0.
+  0.
+  1.41064e-07
+  3.11004e-06
+  -7.22048e-07
+  -1.48497e-07
+  -1.28208e-12
+  4.45175e-06
+  -9.01696e-07
+  -7.1628e-07
+  -1.28208e-12
+  0.
+  0.
+  0.
+  3.08789e-07
+  0.
+  0.
+  0.
+  -3.79379e-07
+  8.44684
+  4.82552e-06
+  1.01567e-05
+  -1.28208e-12
+  8.43519
+  4.73676e-06
+  4.93544e-06
+  -1.28208e-12
+  0.
+  0.
+  0.
+  -1.84461e-08
+  0.
+  0.
+  0.
+  -2.04959e-07
+  8.4559
+  9.95398e-06
+  1.00974e-05
+  -1.28208e-12
+  8.44269
+  9.93249e-06
+  4.98204e-06
+  -1.28208e-12
+  0.
+  0.
+  0.
+  3.31734e-07
+
+Oh, whaddya know, a different contact state it looks like.
+
+Solve with PJFNK, FDP, bjacobi, bt, contact and mesh updated on every ComputeFunction call:
+ 0 Nonlinear |R| = 1.602900e+02
+    0 KSP unpreconditioned resid norm 1.602900149382e+02 true resid norm 1.602900149382e+02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.599671499368e+02 true resid norm 1.599671499378e+02 ||r(i)||/||b|| 9.979857447728e-01
+    2 KSP unpreconditioned resid norm 1.599608879658e+02 true resid norm 1.610107178943e+02 ||r(i)||/||b|| 1.004496243614e+00
+    3 KSP unpreconditioned resid norm 3.181879201229e+00 true resid norm 2.229717380990e+03 ||r(i)||/||b|| 1.391051951583e+01
+    4 KSP unpreconditioned resid norm 1.750714636783e-02 true resid norm 2.223510353009e+03 ||r(i)||/||b|| 1.387179578133e+01
+    5 KSP unpreconditioned resid norm 4.603842515535e-04 true resid norm 2.223496256476e+03 ||r(i)||/||b|| 1.387170783740e+01
+  Linear solve converged due to CONVERGED_RTOL iterations 5
+      Line search: Using full step: fnorm 1.602900149382e+02 gnorm 2.848229364226e-02
+ 1 Nonlinear |R| = 2.848229e-02
+    0 KSP unpreconditioned resid norm 2.848229364226e-02 true resid norm 2.848229364226e-02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 2.747173824518e-02 true resid norm 2.747173824123e-02 ||r(i)||/||b|| 9.645198728120e-01
+    2 KSP unpreconditioned resid norm 2.388908220279e-05 true resid norm 3.371861780260e-01 ||r(i)||/||b|| 1.183844890657e+01
+    3 KSP unpreconditioned resid norm 2.109140044462e-10 true resid norm 3.372577125111e-01 ||r(i)||/||b|| 1.184096044887e+01
+  Linear solve converged due to CONVERGED_RTOL iterations 3
+      Line search: Using full step: fnorm 2.848229364226e-02 gnorm 6.717873036118e-03
+ 2 Nonlinear |R| = 6.717873e-03
+    0 KSP unpreconditioned resid norm 6.717873036118e-03 true resid norm 6.717873036118e-03 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 2.133871915899e-03 true resid norm 2.133879423990e-03 ||r(i)||/||b|| 3.176421186463e-01
+    2 KSP unpreconditioned resid norm 1.406269506134e-04 true resid norm 1.569573768382e-04 ||r(i)||/||b|| 2.336414755003e-02
+    3 KSP unpreconditioned resid norm 3.330168642524e-09 true resid norm 5.392536312154e-05 ||r(i)||/||b|| 8.027148300007e-03
+  Linear solve converged due to CONVERGED_RTOL iterations 3
+      Line search: Using full step: fnorm 6.717873036118e-03 gnorm 2.945500798521e-05
+ 3 Nonlinear |R| = 2.945501e-05
+    0 KSP unpreconditioned resid norm 2.945500798521e-05 true resid norm 2.945500798521e-05 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 5.330423370058e-06 true resid norm 5.330437707762e-06 ||r(i)||/||b|| 1.809688087825e-01
+    2 KSP unpreconditioned resid norm 1.373665285484e-06 true resid norm 1.369016702223e-06 ||r(i)||/||b|| 4.647823225546e-02
+    3 KSP unpreconditioned resid norm 4.536520157338e-10 true resid norm 1.701702143766e-07 ||r(i)||/||b|| 5.777293099428e-03
+    4 KSP unpreconditioned resid norm 6.231283464025e-14 true resid norm 1.701657910816e-07 ||r(i)||/||b|| 5.777142928190e-03
+  Linear solve converged due to CONVERGED_RTOL iterations 4
+      Line search: Using full step: fnorm 2.945500798521e-05 gnorm 4.401605929508e-07
+ 4 Nonlinear |R| = 4.401606e-07
+    0 KSP unpreconditioned resid norm 4.401605929508e-07 true resid norm 4.401605929508e-07 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 2.936054969289e-08 true resid norm 2.936055024530e-08 ||r(i)||/||b|| 6.670417732870e-02
+    2 KSP unpreconditioned resid norm 2.720237618859e-11 true resid norm 2.805685436947e-11 ||r(i)||/||b|| 6.374231318932e-05
+    3 KSP unpreconditioned resid norm 3.472597388030e-16 true resid norm 6.793963493759e-12 ||r(i)||/||b|| 1.543519252420e-05
+  Linear solve converged due to CONVERGED_RTOL iterations 3
+      Line search: Using full step: fnorm 4.401605929508e-07 gnorm 7.008175587175e-11
+ 5 Nonlinear |R| = 7.008176e-11
+
+Solve with PJFNK, FDP, bjacobi, bt, mesh updated on every compute function call and contact updated on:
+if (snes->nfuncs == 0 || snes->ksp->reason != KSP_CONVERGED_ITERATING)
+
+ 0 Nonlinear |R| = 1.602900e+02
+    0 KSP unpreconditioned resid norm 1.602900149382e+02 true resid norm 1.602900149382e+02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 2.460704081733e-02 true resid norm 2.460704072104e-02 ||r(i)||/||b|| 1.535157428897e-04
+    2 KSP unpreconditioned resid norm 4.573493857903e-04 true resid norm 2.223477574342e+03 ||r(i)||/||b|| 1.387159128533e+01
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+      Line search: Using full step: fnorm 1.602900149382e+02 gnorm 4.749061917961e-04
+ 1 Nonlinear |R| = 4.749062e-04
+    0 KSP unpreconditioned resid norm 4.749061917961e-04 true resid norm 4.749061917961e-04 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 4.617651332863e-04 true resid norm 4.617651332860e-04 ||r(i)||/||b|| 9.723291489202e-01
+    2 KSP unpreconditioned resid norm 2.274102981444e-07 true resid norm 6.269124971280e-03 ||r(i)||/||b|| 1.320076486594e+01
+    3 KSP unpreconditioned resid norm 1.660709058726e-11 true resid norm 6.268298672453e-03 ||r(i)||/||b|| 1.319902494585e+01
+  Linear solve converged due to CONVERGED_RTOL iterations 3
+      Line search: gnorm after quadratic fit 3.169237301824e-04
+      Line search: Quadratically determined step, lambda=4.8874447856545611e-01
+ 2 Nonlinear |R| = 3.169237e-04
+    0 KSP unpreconditioned resid norm 3.169237301824e-04 true resid norm 3.169237301824e-04 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 3.140232101163e-04 true resid norm 3.139914185823e-04 ||r(i)||/||b|| 9.907475795568e-01
+    2 KSP unpreconditioned resid norm 3.627751562608e-07 true resid norm 4.044078427143e-07 ||r(i)||/||b|| 1.276041533657e-03
+    3 KSP unpreconditioned resid norm 1.885770844844e-11 true resid norm 1.790817502879e-07 ||r(i)||/||b|| 5.650626104421e-04
+  Linear solve converged due to CONVERGED_RTOL iterations 3
+      Line search: Using full step: fnorm 3.169237301824e-04 gnorm 5.467802405183e-07
+ 3 Nonlinear |R| = 5.467802e-07
+    0 KSP unpreconditioned resid norm 5.467802405183e-07 true resid norm 5.467802405183e-07 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 2.816898341196e-08 true resid norm 2.816898341098e-08 ||r(i)||/||b|| 5.151792497892e-02
+    2 KSP unpreconditioned resid norm 5.271431571858e-10 true resid norm 5.272333439791e-10 ||r(i)||/||b|| 9.642509090660e-04
+    3 KSP unpreconditioned resid norm 1.301644928614e-13 true resid norm 5.014438606918e-12 ||r(i)||/||b|| 9.170848240904e-06
+  Linear solve converged due to CONVERGED_RTOL iterations 3
+      Line search: Using full step: fnorm 5.467802405183e-07 gnorm 3.042719445816e-10
+ 4 Nonlinear |R| = 3.042719e-10
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 4
+
+Time Step  2, time = 1
+                dt = 0.5
+ 0 Nonlinear |R| = 1.602775e+02
+    0 KSP unpreconditioned resid norm 1.602775370798e+02 true resid norm 1.602775370798e+02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 9.580389240284e-05 true resid norm 9.580389240284e-05 ||r(i)||/||b|| 5.977374880371e-07
+  Linear solve converged due to CONVERGED_RTOL iterations 1
+      Line search: Using full step: fnorm 1.602775370798e+02 gnorm 1.324754493598e-04
+ 1 Nonlinear |R| = 1.324754e-04
+    0 KSP unpreconditioned resid norm 1.324754493598e-04 true resid norm 1.324754493598e-04 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.324081791880e-04 true resid norm 1.326770793026e-04 ||r(i)||/||b|| 1.001522017429e+00
+    2 KSP unpreconditioned resid norm 1.297541569330e-04 true resid norm 1.831064988986e+01 ||r(i)||/||b|| 1.382191944119e+05
+    3 KSP unpreconditioned resid norm 1.272597144252e-04 true resid norm 3.520594167363e+01 ||r(i)||/||b|| 2.657544612512e+05
+    4 KSP unpreconditioned resid norm 1.249045333166e-04 true resid norm 5.085831127783e+01 ||r(i)||/||b|| 3.839074449161e+05
+    5 KSP unpreconditioned resid norm 1.226754528939e-04 true resid norm 6.540330546020e+01 ||r(i)||/||b|| 4.937013293880e+05
+    6 KSP unpreconditioned resid norm 1.205616076718e-04 true resid norm 7.895442616988e+01 ||r(i)||/||b|| 5.959928919015e+05
+    7 KSP unpreconditioned resid norm 1.185533992703e-04 true resid norm 9.161017640998e+01 ||r(i)||/||b|| 6.915256891198e+05
+    8 KSP unpreconditioned resid norm 1.166423125469e-04 true resid norm 1.034564587350e+02 ||r(i)||/||b|| 7.809481623574e+05
+    9 KSP unpreconditioned resid norm 1.148207633217e-04 true resid norm 1.145685274071e+02 ||r(i)||/||b|| 8.648283735646e+05
+   10 KSP unpreconditioned resid norm 1.130819714735e-04 true resid norm 1.250125888367e+02 ||r(i)||/||b|| 9.436660863641e+05
+   11 KSP unpreconditioned resid norm 1.114198545580e-04 true resid norm 1.348471216171e+02 ||r(i)||/||b|| 1.017902730421e+06
+   12 KSP unpreconditioned resid norm 1.098289381379e-04 true resid norm 1.441239721065e+02 ||r(i)||/||b|| 1.087929671521e+06
+   13 KSP unpreconditioned resid norm 1.083042798084e-04 true resid norm 1.528892689132e+02 ||r(i)||/||b|| 1.154095114620e+06
+   14 KSP unpreconditioned resid norm 1.068414045132e-04 true resid norm 1.611841893416e+02 ||r(i)||/||b|| 1.216709889421e+06
+   15 KSP unpreconditioned resid norm 1.054362492186e-04 true resid norm 1.690456074068e+02 ||r(i)||/||b|| 1.276052341953e+06
+   16 KSP unpreconditioned resid norm 1.040851153891e-04 true resid norm 1.765066405153e+02 ||r(i)||/||b|| 1.332372461224e+06
+   17 KSP unpreconditioned resid norm 1.027846279945e-04 true resid norm 1.835971167480e+02 ||r(i)||/||b|| 1.385895406547e+06
+   18 KSP unpreconditioned resid norm 1.015317000147e-04 true resid norm 1.903439732405e+02 ||r(i)||/||b|| 1.436824514734e+06
+   19 KSP unpreconditioned resid norm 1.003235015919e-04 true resid norm 1.967715976818e+02 ||r(i)||/||b|| 1.485343877924e+06
+   20 KSP unpreconditioned resid norm 9.915743312632e-05 true resid norm 2.029021235844e+02 ||r(i)||/||b|| 1.531620572453e+06
+   21 KSP unpreconditioned resid norm 9.803110173477e-05 true resid norm 2.087556844365e+02 ||r(i)||/||b|| 1.575806577335e+06
+   22 KSP unpreconditioned resid norm 9.694230058530e-05 true resid norm 2.143506346257e+02 ||r(i)||/||b|| 1.618040441920e+06
+   23 KSP unpreconditioned resid norm 9.588899070209e-05 true resid norm 2.197037419773e+02 ||r(i)||/||b|| 1.658448739287e+06
+   24 KSP unpreconditioned resid norm 9.486928489902e-05 true resid norm 2.248303553470e+02 ||r(i)||/||b|| 1.697147331324e+06
+   25 KSP unpreconditioned resid norm 9.388143355353e-05 true resid norm 2.297445515297e+02 ||r(i)||/||b|| 1.734242477681e+06
+   26 KSP unpreconditioned resid norm 9.292381197705e-05 true resid norm 2.344592647515e+02 ||r(i)||/||b|| 1.769831813250e+06
+   27 KSP unpreconditioned resid norm 9.199490917412e-05 true resid norm 2.389863996808e+02 ||r(i)||/||b|| 1.804005201234e+06
+   28 KSP unpreconditioned resid norm 9.109331781356e-05 true resid norm 2.433369325496e+02 ||r(i)||/||b|| 1.836845496471e+06
+   29 KSP unpreconditioned resid norm 9.021772526004e-05 true resid norm 2.475209993138e+02 ||r(i)||/||b|| 1.868429210922e+06
+   30 KSP unpreconditioned resid norm 2.515479748848e+02 true resid norm 2.515479748848e+02 ||r(i)||/||b|| 1.898827111744e+06
+  Linear solve did not converge due to DIVERGED_DTOL iterations 30
+      Line search: gnorm after quadratic fit 5.069995073375e-01
+      Line search: Cubic step no good, shrinking lambda, current gnorm 5.069749809461e-01 lambda=1.0000000000000002e-02
+      Line search: Cubic step no good, shrinking lambda, current gnorm 5.069725283216e-01 lambda=1.0000000000000002e-03
+      Line search: Cubic step no good, shrinking lambda, current gnorm 5.069722830593e-01 lambda=1.0000000000000003e-04
+      Line search: Cubic step no good, shrinking lambda, current gnorm 5.069722585331e-01 lambda=1.0000000000000004e-05
+      Line search: Cubic step no good, shrinking lambda, current gnorm 5.069722560804e-01 lambda=1.0000000000000004e-06
+      Line search: Cubic step no good, shrinking lambda, current gnorm 5.069722558352e-01 lambda=1.0000000000000005e-07
+      Line search: Cubic step no good, shrinking lambda, current gnorm 5.069722558106e-01 lambda=1.0000000000000005e-08
+      Line search: Cubic step no good, shrinking lambda, current gnorm 5.069722558082e-01 lambda=1.0000000000000005e-09
+      Line search: Cubic step no good, shrinking lambda, current gnorm 5.069722558079e-01 lambda=1.0000000000000006e-10
+      Line search: Cubic step no good, shrinking lambda, current gnorm 5.069722558079e-01 lambda=1.0000000000000006e-11
+      Line search: Cubic step no good, shrinking lambda, current gnorm 5.069722558079e-01 lambda=1.0000000000000006e-12
+      Line search: Cubic step no good, shrinking lambda, current gnorm 5.069722558079e-01 lambda=1.0000000000000007e-13
+      Line search: unable to find good step length! After 12 tries
+      Line search: fnorm=1.3247544935978778e-04, gnorm=5.0697225580792205e-01, ynorm=2.1610622831049657e-04, minlambda=9.9999999999999998e-13, lambda=1.0000000000000007e-13, initial slope=-1.0618809050736214e-03
+Nonlinear solve did not converge due to DIVERGED_LINE_SEARCH iterations 1
+
+Now without the P in PJFNK, (e.g. removing the calls to updateContactSet and updateMesh from evaluation of the preconditioner):
+
+ 0 Nonlinear |R| = 1.602900e+02
+    0 KSP unpreconditioned resid norm 1.602900149382e+02 true resid norm 1.602900149382e+02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.432659069023e+02 true resid norm 1.432659069023e+02 ||r(i)||/||b|| 8.937918369869e-01
+    2 KSP unpreconditioned resid norm 1.350717791678e+02 true resid norm 1.350717816667e+02 ||r(i)||/||b|| 8.426712151645e-01
+    3 KSP unpreconditioned resid norm 2.481742604667e+01 true resid norm 2.481742530837e+01 ||r(i)||/||b|| 1.548282674871e-01
+    4 KSP unpreconditioned resid norm 1.010570069660e-01 true resid norm 1.010561048509e-01 ||r(i)||/||b|| 6.304578915280e-04
+    5 KSP unpreconditioned resid norm 1.168146195546e-02 true resid norm 1.168120646278e-02 ||r(i)||/||b|| 7.287544684103e-05
+    6 KSP unpreconditioned resid norm 1.150471172040e-02 true resid norm 1.150439382258e-02 ||r(i)||/||b|| 7.177236727451e-05
+    7 KSP unpreconditioned resid norm 7.032277403283e-05 true resid norm 2.223475802277e+03 ||r(i)||/||b|| 1.387158022996e+01
+  Linear solve converged due to CONVERGED_RTOL iterations 7
+      Line search: Using full step: fnorm 1.602900149382e+02 gnorm 1.451539676472e-04
+ 1 Nonlinear |R| = 1.451540e-04
+    0 KSP unpreconditioned resid norm 1.451539676472e-04 true resid norm 1.451539676472e-04 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.436997115652e-04 true resid norm 1.436997115652e-04 ||r(i)||/||b|| 9.899812860400e-01
+    2 KSP unpreconditioned resid norm 6.270235252351e-05 true resid norm 6.270235346347e-05 ||r(i)||/||b|| 4.319713369177e-01
+    3 KSP unpreconditioned resid norm 6.061528069963e-05 true resid norm 6.061528263372e-05 ||r(i)||/||b|| 4.175930125523e-01
+    4 KSP unpreconditioned resid norm 2.275531832661e-05 true resid norm 2.275532093491e-05 ||r(i)||/||b|| 1.567667856673e-01
+    5 KSP unpreconditioned resid norm 1.294015142481e-05 true resid norm 1.294014345528e-05 ||r(i)||/||b|| 8.914770753444e-02
+    6 KSP unpreconditioned resid norm 8.356953526925e-06 true resid norm 8.356941407308e-06 ||r(i)||/||b|| 5.757294507870e-02
+    7 KSP unpreconditioned resid norm 5.534397472664e-07 true resid norm 5.534364807846e-07 ||r(i)||/||b|| 3.812754757967e-03
+    8 KSP unpreconditioned resid norm 1.519307654842e-07 true resid norm 1.519339209827e-07 ||r(i)||/||b|| 1.046708701425e-03
+    9 KSP unpreconditioned resid norm 9.089211828186e-08 true resid norm 9.089710130385e-08 ||r(i)||/||b|| 6.262116205102e-04
+   10 KSP unpreconditioned resid norm 8.241968203378e-08 true resid norm 8.242204566905e-08 ||r(i)||/||b|| 5.678249585941e-04
+   11 KSP unpreconditioned resid norm 4.800756870898e-08 true resid norm 4.799079869050e-08 ||r(i)||/||b|| 3.306199580238e-04
+   12 KSP unpreconditioned resid norm 3.120668708371e-08 true resid norm 3.121308010534e-08 ||r(i)||/||b|| 2.150342881512e-04
+   13 KSP unpreconditioned resid norm 1.098696203325e-08 true resid norm 1.098307244510e-08 ||r(i)||/||b|| 7.566498266027e-05
+   14 KSP unpreconditioned resid norm 3.595916012503e-09 true resid norm 3.598525839150e-09 ||r(i)||/||b|| 2.479109525891e-05
+   15 KSP unpreconditioned resid norm 9.416274057666e-10 true resid norm 1.601892025902e-03 ||r(i)||/||b|| 1.103581288109e+01
+  Linear solve converged due to CONVERGED_RTOL iterations 15
+      Line search: Using full step: fnorm 1.451539676472e-04 gnorm 2.927073831720e-06
+ 2 Nonlinear |R| = 2.927074e-06
+    0 KSP unpreconditioned resid norm 2.927073831720e-06 true resid norm 2.927073831720e-06 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 2.118848425608e-06 true resid norm 2.118848425608e-06 ||r(i)||/||b|| 7.238793919873e-01
+    2 KSP unpreconditioned resid norm 5.693785885366e-07 true resid norm 5.693785771458e-07 ||r(i)||/||b|| 1.945214264757e-01
+    3 KSP unpreconditioned resid norm 3.770601627407e-07 true resid norm 3.770601688226e-07 ||r(i)||/||b|| 1.288181270785e-01
+    4 KSP unpreconditioned resid norm 2.456806842833e-07 true resid norm 2.456807409286e-07 ||r(i)||/||b|| 8.393390636963e-02
+    5 KSP unpreconditioned resid norm 1.051857137614e-07 true resid norm 1.051858022500e-07 ||r(i)||/||b|| 3.593547969650e-02
+    6 KSP unpreconditioned resid norm 1.041036484092e-07 true resid norm 1.041037186232e-07 ||r(i)||/||b|| 3.556579868094e-02
+    7 KSP unpreconditioned resid norm 3.304649232858e-08 true resid norm 3.304672434933e-08 ||r(i)||/||b|| 1.129002076791e-02
+    8 KSP unpreconditioned resid norm 2.266309888039e-08 true resid norm 2.266335204796e-08 ||r(i)||/||b|| 7.742664979052e-03
+    9 KSP unpreconditioned resid norm 4.468913468206e-09 true resid norm 4.469055663584e-09 ||r(i)||/||b|| 1.526799773601e-03
+   10 KSP unpreconditioned resid norm 1.667607266347e-09 true resid norm 1.667783783290e-09 ||r(i)||/||b|| 5.697785157368e-04
+   11 KSP unpreconditioned resid norm 9.448521149244e-10 true resid norm 9.448837183297e-10 ||r(i)||/||b|| 3.228082968356e-04
+   12 KSP unpreconditioned resid norm 5.678332222152e-10 true resid norm 5.682936554131e-10 ||r(i)||/||b|| 1.941507758549e-04
+   13 KSP unpreconditioned resid norm 3.087508763292e-10 true resid norm 3.089761356878e-10 ||r(i)||/||b|| 1.055580260189e-04
+   14 KSP unpreconditioned resid norm 1.602551439193e-10 true resid norm 1.604274410806e-10 ||r(i)||/||b|| 5.480812931403e-05
+   15 KSP unpreconditioned resid norm 8.016393595624e-11 true resid norm 8.044215268461e-11 ||r(i)||/||b|| 2.748210578526e-05
+   16 KSP unpreconditioned resid norm 4.520483409059e-11 true resid norm 4.560297199625e-11 ||r(i)||/||b|| 1.557971360410e-05
+   17 KSP unpreconditioned resid norm 4.032688992341e-11 true resid norm 4.070345861596e-11 ||r(i)||/||b|| 1.390585306556e-05
+   18 KSP unpreconditioned resid norm 1.649767825400e-11 true resid norm 3.079588765112e-10 ||r(i)||/||b|| 1.052104915065e-04
+  Linear solve converged due to CONVERGED_RTOL iterations 18
+      Line search: Using full step: fnorm 2.927073831720e-06 gnorm 7.545248011953e-11
+ 3 Nonlinear |R| = 7.545248e-11
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 3
+ Solve Converged!
+
+Outlier Variable Residual Norms:
+  disp_x: 7.366649e-11
+
+Time Step  2, time = 1
+                dt = 0.5
+ 0 Nonlinear |R| = 1.602775e+02
+    0 KSP unpreconditioned resid norm 1.602775370771e+02 true resid norm 1.602775370771e+02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.358824389986e+02 true resid norm 1.358824389986e+02 ||r(i)||/||b|| 8.477946534280e-01
+    2 KSP unpreconditioned resid norm 2.480351611143e+01 true resid norm 2.480351605196e+01 ||r(i)||/||b|| 1.547535387946e-01
+    3 KSP unpreconditioned resid norm 2.417605029291e+01 true resid norm 2.417605111222e+01 ||r(i)||/||b|| 1.508386736726e-01
+    4 KSP unpreconditioned resid norm 1.015426056541e-01 true resid norm 1.015424120891e-01 ||r(i)||/||b|| 6.335411308463e-04
+    5 KSP unpreconditioned resid norm 1.189753655170e-02 true resid norm 1.189761842347e-02 ||r(i)||/||b|| 7.423135294217e-05
+    6 KSP unpreconditioned resid norm 1.358934838564e-04 true resid norm 2.231244551229e-03 ||r(i)||/||b|| 1.392113075806e-05
+  Linear solve converged due to CONVERGED_RTOL iterations 6
+      Line search: Using full step: fnorm 1.602775370771e+02 gnorm 1.916425318899e-04
+ 1 Nonlinear |R| = 1.916425e-04
+    0 KSP unpreconditioned resid norm 1.916425318899e-04 true resid norm 1.916425318899e-04 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.914394735040e-04 true resid norm 1.914394735040e-04 ||r(i)||/||b|| 9.989404315216e-01
+    2 KSP unpreconditioned resid norm 1.314667684415e-04 true resid norm 1.314667667304e-04 ||r(i)||/||b|| 6.859999470576e-01
+    3 KSP unpreconditioned resid norm 7.600486096655e-05 true resid norm 7.600487679062e-05 ||r(i)||/||b|| 3.965971229930e-01
+    4 KSP unpreconditioned resid norm 5.427240213506e-05 true resid norm 5.427240212538e-05 ||r(i)||/||b|| 2.831960191205e-01
+    5 KSP unpreconditioned resid norm 4.458204765489e-05 true resid norm 4.458205515014e-05 ||r(i)||/||b|| 2.326313199397e-01
+    6 KSP unpreconditioned resid norm 1.641319431135e-05 true resid norm 1.641326556128e-05 ||r(i)||/||b|| 8.564521350985e-02
+    7 KSP unpreconditioned resid norm 9.106064828496e-06 true resid norm 9.106088209795e-06 ||r(i)||/||b|| 4.751600868552e-02
+    8 KSP unpreconditioned resid norm 4.122412916563e-06 true resid norm 4.122404555388e-06 ||r(i)||/||b|| 2.151090634597e-02
+    9 KSP unpreconditioned resid norm 1.996874667020e-06 true resid norm 1.996865809031e-06 ||r(i)||/||b|| 1.041974236793e-02
+   10 KSP unpreconditioned resid norm 8.544809322928e-07 true resid norm 8.544957019823e-07 ||r(i)||/||b|| 4.458799899770e-03
+   11 KSP unpreconditioned resid norm 5.279300791751e-07 true resid norm 5.279367383073e-07 ||r(i)||/||b|| 2.754799433618e-03
+   12 KSP unpreconditioned resid norm 1.190232449944e-07 true resid norm 1.189726958033e-07 ||r(i)||/||b|| 6.208052806966e-04
+   13 KSP unpreconditioned resid norm 1.954185811965e-08 true resid norm 1.955040222974e-08 ||r(i)||/||b|| 1.020149443704e-04
+   14 KSP unpreconditioned resid norm 1.305865018090e-08 true resid norm 1.306007174271e-08 ||r(i)||/||b|| 6.814808599074e-05
+   15 KSP unpreconditioned resid norm 3.063329560261e-09 true resid norm 3.061003785955e-09 ||r(i)||/||b|| 1.597246579749e-05
+   16 KSP unpreconditioned resid norm 3.757687762177e-10 true resid norm 1.405491286854e+03 ||r(i)||/||b|| 7.333921509977e+06
+  Linear solve converged due to CONVERGED_RTOL iterations 16
+      Line search: gnorm after quadratic fit 4.750906988607e-01
+      Line search: Cubic step no good, shrinking lambda, current gnorm 4.707949438106e-01 lambda=1.0000000000000002e-02
+      Line search: Cubic step no good, shrinking lambda, current gnorm 4.703724421707e-01 lambda=1.0000000000000002e-03
+      Line search: Cubic step no good, shrinking lambda, current gnorm 4.703302634560e-01 lambda=1.0000000000000003e-04
+      Line search: Cubic step no good, shrinking lambda, current gnorm 4.703260462997e-01 lambda=1.0000000000000004e-05
+      Line search: Cubic step no good, shrinking lambda, current gnorm 4.703256245912e-01 lambda=1.0000000000000004e-06
+      Line search: Cubic step no good, shrinking lambda, current gnorm 4.703255824205e-01 lambda=1.0000000000000005e-07
+      Line search: Cubic step no good, shrinking lambda, current gnorm 4.703255782034e-01 lambda=1.0000000000000005e-08
+      Line search: Cubic step no good, shrinking lambda, current gnorm 4.703255777817e-01 lambda=1.0000000000000005e-09
+      Line search: Cubic step no good, shrinking lambda, current gnorm 4.703255777395e-01 lambda=1.0000000000000006e-10
+      Line search: Cubic step no good, shrinking lambda, current gnorm 4.703255777353e-01 lambda=1.0000000000000006e-11
+      Line search: Cubic step no good, shrinking lambda, current gnorm 4.703255777349e-01 lambda=1.0000000000000006e-12
+      Line search: Cubic step no good, shrinking lambda, current gnorm 4.703255777348e-01 lambda=1.0000000000000007e-13
+      Line search: unable to find good step length! After 12 tries
+      Line search: fnorm=1.9164253188987080e-04, gnorm=4.7032557773482497e-01, ynorm=1.3013523173137343e-03, minlambda=9.9999999999999998e-13, lambda=1.0000000000000007e-13, initial slope=-3.6726457059243798e-08
+Nonlinear solve did not converge due to DIVERGED_LINE_SEARCH iterations 1
+
+This definitely looks to be the best yet.
+
+Now with no line search:
+ 0 Nonlinear |R| = 1.602900e+02
+    0 KSP unpreconditioned resid norm 1.602900149382e+02 true resid norm 1.602900149382e+02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.432659069023e+02 true resid norm 1.432659069023e+02 ||r(i)||/||b|| 8.937918369869e-01
+    2 KSP unpreconditioned resid norm 1.350717791678e+02 true resid norm 1.350717816667e+02 ||r(i)||/||b|| 8.426712151645e-01
+    3 KSP unpreconditioned resid norm 2.481742604667e+01 true resid norm 2.481742530837e+01 ||r(i)||/||b|| 1.548282674871e-01
+    4 KSP unpreconditioned resid norm 1.010570069660e-01 true resid norm 1.010561048509e-01 ||r(i)||/||b|| 6.304578915280e-04
+    5 KSP unpreconditioned resid norm 1.168146195546e-02 true resid norm 1.168120646278e-02 ||r(i)||/||b|| 7.287544684103e-05
+    6 KSP unpreconditioned resid norm 1.150471172040e-02 true resid norm 1.150439382258e-02 ||r(i)||/||b|| 7.177236727451e-05
+    7 KSP unpreconditioned resid norm 7.032277403283e-05 true resid norm 2.223475802277e+03 ||r(i)||/||b|| 1.387158022996e+01
+  Linear solve converged due to CONVERGED_RTOL iterations 7
+ 1 Nonlinear |R| = 1.451540e-04
+    0 KSP unpreconditioned resid norm 1.451539676472e-04 true resid norm 1.451539676472e-04 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.436997115652e-04 true resid norm 1.436997115652e-04 ||r(i)||/||b|| 9.899812860401e-01
+    2 KSP unpreconditioned resid norm 6.270235252351e-05 true resid norm 6.270235346241e-05 ||r(i)||/||b|| 4.319713369104e-01
+    3 KSP unpreconditioned resid norm 6.061528069918e-05 true resid norm 6.061528264470e-05 ||r(i)||/||b|| 4.175930126280e-01
+    4 KSP unpreconditioned resid norm 2.275531832558e-05 true resid norm 2.275532094223e-05 ||r(i)||/||b|| 1.567667857178e-01
+    5 KSP unpreconditioned resid norm 1.294015145083e-05 true resid norm 1.294014653208e-05 ||r(i)||/||b|| 8.914772873125e-02
+    6 KSP unpreconditioned resid norm 8.356953630210e-06 true resid norm 8.356948186098e-06 ||r(i)||/||b|| 5.757299177939e-02
+    7 KSP unpreconditioned resid norm 5.534384347226e-07 true resid norm 5.534538961578e-07 ||r(i)||/||b|| 3.812874736590e-03
+    8 KSP unpreconditioned resid norm 1.519310137152e-07 true resid norm 1.519299596478e-07 ||r(i)||/||b|| 1.046681410853e-03
+    9 KSP unpreconditioned resid norm 9.089732006464e-08 true resid norm 9.089290654531e-08 ||r(i)||/||b|| 6.261827218270e-04
+   10 KSP unpreconditioned resid norm 8.366728648700e-08 true resid norm 8.367901341938e-08 ||r(i)||/||b|| 5.764845065948e-04
+   11 KSP unpreconditioned resid norm 4.800852290198e-08 true resid norm 4.799638783283e-08 ||r(i)||/||b|| 3.306584629466e-04
+   12 KSP unpreconditioned resid norm 3.120680812598e-08 true resid norm 3.121193234027e-08 ||r(i)||/||b|| 2.150263809263e-04
+   13 KSP unpreconditioned resid norm 1.098696135347e-08 true resid norm 1.098350865942e-08 ||r(i)||/||b|| 7.566798784387e-05
+   14 KSP unpreconditioned resid norm 3.595917199957e-09 true resid norm 3.593440478279e-09 ||r(i)||/||b|| 2.475606100560e-05
+   15 KSP unpreconditioned resid norm 9.416260286095e-10 true resid norm 1.601892024197e-03 ||r(i)||/||b|| 1.103581286934e+01
+  Linear solve converged due to CONVERGED_RTOL iterations 15
+ 2 Nonlinear |R| = 2.927074e-06
+    0 KSP unpreconditioned resid norm 2.927073815329e-06 true resid norm 2.927073815329e-06 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 2.118848439229e-06 true resid norm 2.118848439229e-06 ||r(i)||/||b|| 7.238794006944e-01
+    2 KSP unpreconditioned resid norm 5.693785743520e-07 true resid norm 5.693785642801e-07 ||r(i)||/||b|| 1.945214231695e-01
+    3 KSP unpreconditioned resid norm 3.770601778621e-07 true resid norm 3.770601832994e-07 ||r(i)||/||b|| 1.288181327457e-01
+    4 KSP unpreconditioned resid norm 2.456806629715e-07 true resid norm 2.456807188981e-07 ||r(i)||/||b|| 8.393389931318e-02
+    5 KSP unpreconditioned resid norm 1.051857099077e-07 true resid norm 1.051857980821e-07 ||r(i)||/||b|| 3.593547847384e-02
+    6 KSP unpreconditioned resid norm 1.041036432009e-07 true resid norm 1.041037121660e-07 ||r(i)||/||b|| 3.556579667407e-02
+    7 KSP unpreconditioned resid norm 3.304649190305e-08 true resid norm 3.304672156718e-08 ||r(i)||/||b|| 1.129001988065e-02
+    8 KSP unpreconditioned resid norm 2.266309599872e-08 true resid norm 2.266335056541e-08 ||r(i)||/||b|| 7.742664515917e-03
+    9 KSP unpreconditioned resid norm 4.480163787678e-09 true resid norm 4.480319017262e-09 ||r(i)||/||b|| 1.530647773144e-03
+   10 KSP unpreconditioned resid norm 1.669011427119e-09 true resid norm 1.669198753969e-09 ||r(i)||/||b|| 5.702619268524e-04
+   11 KSP unpreconditioned resid norm 1.009174409193e-09 true resid norm 1.009246866312e-09 ||r(i)||/||b|| 3.447972036191e-04
+   12 KSP unpreconditioned resid norm 6.807042441187e-10 true resid norm 6.809063040681e-10 ||r(i)||/||b|| 2.326235506950e-04
+   13 KSP unpreconditioned resid norm 3.117391627444e-10 true resid norm 3.118024608062e-10 ||r(i)||/||b|| 1.065236070144e-04
+   14 KSP unpreconditioned resid norm 1.602670897926e-10 true resid norm 1.604313093561e-10 ||r(i)||/||b|| 5.480945117130e-05
+   15 KSP unpreconditioned resid norm 8.016556482573e-11 true resid norm 8.045376559510e-11 ||r(i)||/||b|| 2.748607335209e-05
+   16 KSP unpreconditioned resid norm 4.519620882604e-11 true resid norm 4.556534750297e-11 ||r(i)||/||b|| 1.556685973013e-05
+   17 KSP unpreconditioned resid norm 4.032472560574e-11 true resid norm 4.070931248260e-11 ||r(i)||/||b|| 1.390785304744e-05
+   18 KSP unpreconditioned resid norm 1.649102536810e-11 true resid norm 3.079635551631e-10 ||r(i)||/||b|| 1.052120905016e-04
+  Linear solve converged due to CONVERGED_RTOL iterations 18
+ 3 Nonlinear |R| = 7.545244e-11
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 3
+ Solve Converged!
+
+Outlier Variable Residual Norms:
+  disp_x: 7.366619e-11
+
+Time Step  2, time = 1
+                dt = 0.5
+ 0 Nonlinear |R| = 1.602775e+02
+    0 KSP unpreconditioned resid norm 1.602775370771e+02 true resid norm 1.602775370771e+02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.358824369198e+02 true resid norm 1.358824369198e+02 ||r(i)||/||b|| 8.477946404582e-01
+    2 KSP unpreconditioned resid norm 2.480351366302e+01 true resid norm 2.480351547695e+01 ||r(i)||/||b|| 1.547535352070e-01
+    3 KSP unpreconditioned resid norm 2.417605432595e+01 true resid norm 2.417605453121e+01 ||r(i)||/||b|| 1.508386950043e-01
+    4 KSP unpreconditioned resid norm 1.015425861477e-01 true resid norm 1.015423814253e-01 ||r(i)||/||b|| 6.335409395294e-04
+    5 KSP unpreconditioned resid norm 1.189753752713e-02 true resid norm 1.189746827201e-02 ||r(i)||/||b|| 7.423041612059e-05
+    6 KSP unpreconditioned resid norm 1.359628794207e-04 true resid norm 2.231495014745e-03 ||r(i)||/||b|| 1.392269344438e-05
+  Linear solve converged due to CONVERGED_RTOL iterations 6
+ 1 Nonlinear |R| = 1.900552e-04
+    0 KSP unpreconditioned resid norm 1.900552381709e-04 true resid norm 1.900552381709e-04 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.898702884725e-04 true resid norm 1.898702884725e-04 ||r(i)||/||b|| 9.990268634523e-01
+    2 KSP unpreconditioned resid norm 1.314227422923e-04 true resid norm 1.314227395516e-04 ||r(i)||/||b|| 6.914975920497e-01
+    3 KSP unpreconditioned resid norm 7.704532466503e-05 true resid norm 7.704531236459e-05 ||r(i)||/||b|| 4.053837879244e-01
+    4 KSP unpreconditioned resid norm 5.509323253559e-05 true resid norm 5.509326398325e-05 ||r(i)||/||b|| 2.898802711963e-01
+    5 KSP unpreconditioned resid norm 4.501216544552e-05 true resid norm 4.501216182516e-05 ||r(i)||/||b|| 2.368372598323e-01
+    6 KSP unpreconditioned resid norm 1.941475764040e-05 true resid norm 1.941479742364e-05 ||r(i)||/||b|| 1.021534455482e-01
+    7 KSP unpreconditioned resid norm 9.419548371442e-06 true resid norm 9.419507975058e-06 ||r(i)||/||b|| 4.956194875612e-02
+    8 KSP unpreconditioned resid norm 3.438814420353e-06 true resid norm 3.438896000206e-06 ||r(i)||/||b|| 1.809419215856e-02
+    9 KSP unpreconditioned resid norm 2.032790145627e-06 true resid norm 2.032794823724e-06 ||r(i)||/||b|| 1.069581056164e-02
+   10 KSP unpreconditioned resid norm 8.916617451537e-07 true resid norm 8.916400002516e-07 ||r(i)||/||b|| 4.691478166205e-03
+   11 KSP unpreconditioned resid norm 5.482537600575e-07 true resid norm 5.482281981120e-07 ||r(i)||/||b|| 2.884572945151e-03
+   12 KSP unpreconditioned resid norm 1.255813891636e-07 true resid norm 1.256315190284e-07 ||r(i)||/||b|| 6.610263428541e-04
+   13 KSP unpreconditioned resid norm 1.903434285886e-08 true resid norm 1.905638194985e-08 ||r(i)||/||b|| 1.002675965853e-04
+   14 KSP unpreconditioned resid norm 9.830412365161e-09 true resid norm 9.823309558905e-09 ||r(i)||/||b|| 5.168660255537e-05
+   15 KSP unpreconditioned resid norm 4.191324767477e-09 true resid norm 4.212480463306e-09 ||r(i)||/||b|| 2.216450598177e-05
+   16 KSP unpreconditioned resid norm 6.928401977611e-10 true resid norm 1.405659696443e+03 ||r(i)||/||b|| 7.396058693101e+06
+  Linear solve converged due to CONVERGED_RTOL iterations 16
+ 2 Nonlinear |R| = 4.047539e-08
+    0 KSP unpreconditioned resid norm 4.047539349968e-08 true resid norm 4.047539349968e-08 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 4.027389740640e-08 true resid norm 4.027389740635e-08 ||r(i)||/||b|| 9.950217632021e-01
+    2 KSP unpreconditioned resid norm 2.330944962215e-08 true resid norm 2.330944990101e-08 ||r(i)||/||b|| 5.758918662816e-01
+    3 KSP unpreconditioned resid norm 1.508484090262e-08 true resid norm 1.508483781262e-08 ||r(i)||/||b|| 3.726915666118e-01
+    4 KSP unpreconditioned resid norm 1.204155654751e-08 true resid norm 1.204155452527e-08 ||r(i)||/||b|| 2.975030872859e-01
+    5 KSP unpreconditioned resid norm 8.106561437173e-09 true resid norm 8.106588851792e-09 ||r(i)||/||b|| 2.002843740569e-01
+    6 KSP unpreconditioned resid norm 4.133308962119e-09 true resid norm 4.133292826637e-09 ||r(i)||/||b|| 1.021186570223e-01
+    7 KSP unpreconditioned resid norm 2.119336320758e-09 true resid norm 2.119329973652e-09 ||r(i)||/||b|| 5.236094798358e-02
+    8 KSP unpreconditioned resid norm 4.964851436983e-10 true resid norm 4.965117184690e-10 ||r(i)||/||b|| 1.226700164071e-02
+    9 KSP unpreconditioned resid norm 2.490792441481e-10 true resid norm 2.490765817510e-10 ||r(i)||/||b|| 6.153777893547e-03
+   10 KSP unpreconditioned resid norm 1.157373799621e-10 true resid norm 1.157143358966e-10 ||r(i)||/||b|| 2.858881060601e-03
+   11 KSP unpreconditioned resid norm 4.316193659546e-11 true resid norm 4.320288705135e-11 ||r(i)||/||b|| 1.067386461646e-03
+   12 KSP unpreconditioned resid norm 3.771815501907e-11 true resid norm 3.772774667611e-11 ||r(i)||/||b|| 9.321156241854e-04
+   13 KSP unpreconditioned resid norm 2.628320854599e-11 true resid norm 2.628007916162e-11 ||r(i)||/||b|| 6.492853284261e-04
+   14 KSP unpreconditioned resid norm 1.834519283302e-11 true resid norm 1.834387519976e-11 ||r(i)||/||b|| 4.532105463015e-04
+   15 KSP unpreconditioned resid norm 1.408027599157e-11 true resid norm 1.408495690258e-11 ||r(i)||/||b|| 3.479881400706e-04
+   16 KSP unpreconditioned resid norm 6.953505432275e-12 true resid norm 6.952460932156e-12 ||r(i)||/||b|| 1.717700640072e-04
+   17 KSP unpreconditioned resid norm 1.786998910535e-12 true resid norm 1.782495219068e-12 ||r(i)||/||b|| 4.403898430493e-05
+   18 KSP unpreconditioned resid norm 3.275393770191e-13 true resid norm 2.812006995075e-12 ||r(i)||/||b|| 6.947448194907e-05
+  Linear solve converged due to CONVERGED_RTOL iterations 18
+ 3 Nonlinear |R| = 2.637458e-12
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 3
+ Solve Converged!
+
+This definitely looks great. I'm curious though why the basic line search succeeded when the bt line search did not.
+
+For the Kyle Gamble problem, evaluating on every residual works optimally. For the thermal expansion contact problem, evaluating on non-linear residuals works optimally! Wtf!!! Why do the linear solves look perfect for Kyle Gamble when evaulating on every residual while the true residual norm looks totally wrong in the thermal problem???
+
+I need to figure out how the mesh distances are actually evaulated.
+
+It looks to me like the displaced nodes are moved every time UpdateDisplacedMeshThread::onNode is called. `_mesh` and `_ref_mesh` are two different objects. Good. The nodes are updated in this way:
+
+      displaced_node(direction) =
+          reference_node(direction) +
+          (*_nl_ghosted_soln)(reference_node.dof_number(_nonlinear_system_number, _var_nums[i], 0));
+
+So it depends ONLY on the solution being passed in.
+
+It's clear looking at the 1D problem that the solves diverge on the first linear iteration of the second non-linear iteration. Consequently, since the b vectors are the same in that problem, it has to be the action of the Jacobians that are fairly dramatically different. That's the next bit to zone in on in the debugger.
+
+# 1/9/18
+
+Ok, the residual difference appears to come only on the node 2 displacement. It may also be present on the node 3 displacement (rhs block) but the residual is fairly large.
+
+form 1:
+
+1.59774e-05
+-3.54754e-08
+8.40226e-05
+3.54754e-08
+37.6692
+3.56562e-08
+-4.39588e-07
+-3.56562e-08
+
+form 2:
+
+1.59774e-05
+-3.54754e-08
+2.16891e-05
+3.54754e-08
+37.6692
+3.56562e-08
+-4.39588e-07
+-3.56562e-08
+
+So the change is that the kinematic formulation uses the residual vector in computing its contact force. Consequently, if the contact force is only evaluated on non-linear residuals vs. every residual, then the contact force is going to be different from case to case with my code changes (where the contact force is evaluated when updating the contact set). There is a question about **what** residual is being used, e.g. is it an old residual? Is it the current residual?
+
+As I suspected, in my current code, the residual being used in `_residual_copy` is an old residual. So if we're going to use this residual formulation, it's clear that the contact force must be evaluated at the end of the residual computing chain.
+
+Ok, it looks like having the contact set update on every residual evaluation really is a bad idea. We're finite differencing over a non-smooth point. That's a fundamental problem. The contact state really probably should only be updated on non-linear residuals. Because look what happens if we go back to the bad set-up of having contact updates on Jacobian setup instead of residual:
+
+ 0 Nonlinear |R| = 2.043146e+02
+b    0 KSP unpreconditioned resid norm 2.043145722763e+02 true resid norm 2.043145722763e+02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.931136770970e+02 true resid norm 1.931123251790e+02 ||r(i)||/||b|| 9.451715706202e-01
+    2 KSP unpreconditioned resid norm 1.040113083427e+01 true resid norm 1.055288817760e+01 ||r(i)||/||b|| 5.165019831933e-02
+    3 KSP unpreconditioned resid norm 2.358473647754e-01 true resid norm 8.010636481672e-01 ||r(i)||/||b|| 3.920736730829e-03
+    4 KSP unpreconditioned resid norm 3.021798412022e-03 true resid norm 6.058872614985e-01 ||r(i)||/||b|| 2.965462789796e-03
+    5 KSP unpreconditioned resid norm 4.153875121281e-05 true resid norm 4.881126090654e-01 ||r(i)||/||b|| 2.389024941429e-03
+ 1 Nonlinear |R| = 1.239123e+02
+^R
+    0 KSP unpreconditioned resid norm 1.239123135569e+02 true resid norm 1.239123135569e+02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 4.999177731873e-03 true resid norm 4.999177731875e-03 ||r(i)||/||b|| 4.034447899788e-05
+    2 KSP unpreconditioned resid norm 7.990795445406e-06 true resid norm 7.984625352344e-06 ||r(i)||/||b|| 6.443770698121e-08
+ 2 Nonlinear |R| = 9.670852e-04
+    0 KSP unpreconditioned resid norm 9.670852423165e-04 true resid norm 9.670852423165e-04 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.326058041359e-07 true resid norm 1.326058041359e-07 ||r(i)||/||b|| 1.371190442512e-04
+    2 KSP unpreconditioned resid norm 4.957370676372e-10 true resid norm 4.960800126583e-10 ||r(i)||/||b|| 5.129641017684e-07
+ 3 Nonlinear |R| = 6.909912e-10
+
+Boom beautiful. Need to fix.
+
+# 1/10/18
+
+So the reason PJFNK with -pc_type none and JFNK ran with different solve histories is because of these lines in the constraint:
+
+```
+  // Release
+  if (_model != CM_GLUED && -contact_pressure >= _tension_release && pinfo->_locked_this_step < 2)
+  {
+    pinfo->release();
+    pinfo->_contact_force.zero();
+  }
+  // Capture
+  else
+  {
+    pinfo->capture();
+    if (_formulation == CF_KINEMATIC || _formulation == CF_TANGENTIAL_PENALTY)
+      ++pinfo->_locked_this_step;
+
+
+```
+The key is the locking which prevents things from pinballing around. With PJFNK there are many more calls to updateContactSet. If I delete the locking lines, the JFNK solve (and the PJFNK solve with -pc_type none) no longer converge.
+
+This is just more motivation to take the contact update out of every linear residual...kind of like they had in the beginning. Remember that there's usually a reason for the way things are!!!
+
+MatMFFDSetFunction expects a residual computing function with three arguments: (void*,Vec,Vec)
+
+However, SNESSetFunction expects a function with four arguments!: (SNES,Vec,Vec,void*)
+
+What about MatFDColoringSetFunction? It only expects one argument! (void)
+
+SNESComputeFunction takes three arguments so it works to pass it to MatMFFDSetFunction!
+
+frame #1: 0x00000001038be412 libmoose-dbg.0.dylib`NonlinearSystem::setupColoringFiniteDifferencedPreconditioner(this=0x0000000113808c18) at NonlinearSystem.C:357
+   354
+   355 	  MatFDColoringCreate(petsc_mat->mat(), iscoloring, &_fdcoloring);
+   356 	  MatFDColoringSetFromOptions(_fdcoloring);
+-> 357 	  MatFDColoringSetFunction(_fdcoloring,
+   358 	                           (PetscErrorCode(*)(void)) & libMesh::__libmesh_petsc_snes_fd_residual,
+   359 	                           &petsc_nonlinear_solver);
+
+frame #1: 0x0000000106fcf3ee libmesh_dbg.0.dylib`libMesh::PetscNonlinearSolver<double>::solve(this=0x0000000112ca2b90, jac_in=0x0000000112ca2ac0, x_in=0x0000000112ca2330, r_in=0x0000000112ca28e0, (null)=0.0000000001, (null)=200) at petsc_nonlinear_solver.C:727
+   724 	  // Should actually be a PetscReal, but I don't know which version of PETSc first introduced PetscReal
+   725 	  Real final_residual_norm=0.;
+   726
+-> 727 	  ierr = SNESSetFunction (_snes, r->vec(), __libmesh_petsc_snes_residual, this);
+
+(lldb) up
+frame #1: 0x000000010fae9239 libpetsc.3.08.dylib`MatCreateSNESMF(snes=0x0000000115135c60, J=0x00007fff5fbfd5e0) at snesmfj.c:160
+   157 	  if (snes->npc && snes->npcside== PC_LEFT) {
+   158 	    ierr = MatMFFDSetFunction(*J,(PetscErrorCode (*)(void*,Vec,Vec))SNESComputeFunctionDefaultNPC,snes);CHKERRQ(ierr);
+   159 	  } else {
+-> 160 	    ierr = MatMFFDSetFunction(*J,(PetscErrorCode (*)(void*,Vec,Vec))SNESComputeFunction,snes);CHKERRQ(ierr);
+
+
+I believe there has to be an intermediate step that transitions between the interface and the implementation. SNESComputeFunction is an example of that intermediate layer. It is the interface. It takes three arguments and then calls the implementation with four arguments.
+
+# 1/12/18
+
+Changing the locking doesn't affect the outcome of the sliding block test failure with line-search = none.
+
+# 1/15/18
+
+Here are the failing tests on rod (9 failures):
+
+preconditioners/pbp.check_petsc_options_test................................ FAILED (EXPECTED OUTPUT MISSING)
+executioners/nullspace.test_singular........................................................ FAILED (CSVDIFF)
+executioners/nullspace.test_singular_contaminated........................................... FAILED (CSVDIFF)
+outputs/iterative.csv....................................................................... FAILED (CSVDIFF)
+postprocessors/scalar_coupled_postprocessor.test.............................................. FAILED (CRASH)
+parser/parser_dependency.testpbp.............................................................. FAILED (CRASH)
+preconditioners/pbp.test...................................................................... FAILED (CRASH)
+preconditioners/pbp.pbp_adapt_test............................................................ FAILED (CRASH)
+preconditioners/pbp.lots_of_variables......................................................... FAILED (CRASH)
+
+So looks to pretty much just be PBP.
+
+Here are the tests that fail on my Mac (29 failures):
+
+preconditioners/pbp.check_petsc_options_test................................ FAILED (EXPECTED OUTPUT MISSING)
+misc/exception.parallel_error_jacobian_transient_non_zero_rank............... FAILED (EXPECTED ERROR MISSING)
+vectorpostprocessors/csv_reader.tester_fail.................................. FAILED (EXPECTED ERROR MISSING)
+misc/exception.parallel_error_residual_transient_non_zero_rank............... FAILED (EXPECTED ERROR MISSING)
+restart/kernel_restartable.parallel_error2................................... FAILED (EXPECTED ERROR MISSING)
+mesh/ghost_functors.geometric_edge_neighbor_two_2D.......................................... FAILED (EXODIFF)
+mesh/custom_partitioner.custom_linear_partitioner........................................... FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_one_2D.......................................... FAILED (EXODIFF)
+misc/exception.parallel_exception_jacobian_transient_non_zero_rank.......................... FAILED (EXODIFF)
+ics/depend_on_uo.ic_depend_on_uo............................................................ FAILED (EXODIFF)
+misc/exception.parallel_exception_residual_transient_non_zero_rank.......................... FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_two_3D_Mac...................................... FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_one_3D_Mac...................................... FAILED (EXODIFF)
+mesh/subdomain_partitioner.subdomain_partitioner............................................ FAILED (EXODIFF)
+utils/random.test_uo_par_mesh............................................................... FAILED (EXODIFF)
+mesh/centroid_partitioner.centroid_partitioner_test......................................... FAILED (EXODIFF)
+utils/random.test_par_mesh.................................................................. FAILED (EXODIFF)
+mesh/nemesis.nemesis_test.................................................................... FAILED (ERRMSG)
+restart/restartable_types.first_parallel..................................................... FAILED (ERRMSG)
+executioners/nullspace.test_singular........................................................ FAILED (CSVDIFF)
+executioners/nullspace.test_singular_contaminated........................................... FAILED (CSVDIFF)
+outputs/iterative.csv....................................................................... FAILED (CSVDIFF)
+userobjects/setup_interface_count.GeneralUserObject......................................... FAILED (CSVDIFF)
+postprocessors/all_print_pps.test........................................................... FAILED (CSVDIFF)
+parser/parser_dependency.testpbp.............................................................. FAILED (CRASH)
+postprocessors/scalar_coupled_postprocessor.test.............................................. FAILED (CRASH)
+preconditioners/pbp.test...................................................................... FAILED (CRASH)
+preconditioners/pbp.pbp_adapt_test............................................................ FAILED (CRASH)
+restart/restart.test_xda_restart_part_2....................................................... FAILED (CRASH)
+
+This looks similar to the issue I had before. A lot of mesh stuff.
+
+Trying a git clean -fxd in moose. Still 29 failures.
+
+Now git clean -fxd in libmesh and git clean -fxd in MOOSE. Still 29 fails
+
+Unload ccache, and cleaning. Still 29 fails
+
+After commenting out these lines from my .bash_profile:
+
+# export PATH=/Applications/Emacs.app/Contents/MacOS/bin:$PATH
+# export PATH=/Applications/Emacs.app/Contents/MacOS:$PATH
+# export PATH=/Applications/ParaView-5.4.1.app/Contents/MacOS:$PATH
+# export PATH=/Applications/Cubit-15.2/Cubit.app/Contents/MacOS:$PATH
+# export PATH=$HOME/gmsh/opencc_build:$PATH
+# export PATH=$HOME/bash:$PATH
+
+Then I'm down to the correct number of failures which is 9.
+
+It's definitely a run-time issue (which is good) because when I run with the same compiled executable with those lines uncommented, then I'm back to 29 failures.
+
+After commenting out my bash directory from PATH, down to 22 failures:
+
+misc/exception.parallel_exception_residual_transient_non_zero_rank.............. skipped (skipped dependency)
+misc/exception.parallel_exception_jacobian_transient_non_zero_rank.............. skipped (skipped dependency)
+restart/kernel_restartable.parallel_error2...................................... skipped (skipped dependency)
+restart/restart.test_xda_restart_part_2......................................... skipped (skipped dependency)
+restart/restartable_types.first_parallel........................................ skipped (skipped dependency)
+utils/random.test_par_mesh...................................................... skipped (skipped dependency)
+utils/random.test_uo_par_mesh................................................... skipped (skipped dependency)
+utils/random.threads_verification_uo............................................ skipped (skipped dependency)
+preconditioners/pbp.check_petsc_options_test................................ FAILED (EXPECTED OUTPUT MISSING)
+misc/exception.parallel_error_residual_transient_non_zero_rank............... FAILED (EXPECTED ERROR MISSING)
+misc/exception.parallel_error_jacobian_transient_non_zero_rank............... FAILED (EXPECTED ERROR MISSING)
+vectorpostprocessors/csv_reader.tester_fail.................................. FAILED (EXPECTED ERROR MISSING)
+ics/depend_on_uo.ic_depend_on_uo............................................................ FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_one_2D.......................................... FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_two_2D.......................................... FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_one_3D_Mac...................................... FAILED (EXODIFF)
+mesh/ghost_functors.geometric_edge_neighbor_two_3D_Mac...................................... FAILED (EXODIFF)
+mesh/custom_partitioner.custom_linear_partitioner........................................... FAILED (EXODIFF)
+mesh/centroid_partitioner.centroid_partitioner_test......................................... FAILED (EXODIFF)
+mesh/subdomain_partitioner.subdomain_partitioner............................................ FAILED (EXODIFF)
+mesh/nemesis.nemesis_test.................................................................... FAILED (ERRMSG)
+executioners/nullspace.test_singular_contaminated........................................... FAILED (CSVDIFF)
+executioners/nullspace.test_singular........................................................ FAILED (CSVDIFF)
+postprocessors/all_print_pps.test........................................................... FAILED (CSVDIFF)
+outputs/iterative.csv....................................................................... FAILED (CSVDIFF)
+userobjects/setup_interface_count.GeneralUserObject......................................... FAILED (CSVDIFF)
+parser/parser_dependency.testpbp.............................................................. FAILED (CRASH)
+postprocessors/scalar_coupled_postprocessor.test.............................................. FAILED (CRASH)
+preconditioners/pbp.test...................................................................... FAILED (CRASH)
+preconditioners/pbp.pbp_adapt_test............................................................ FAILED (CRASH)
+
+After commenting out the cubit directory, down to 8 failures:
+
+misc/exception.parallel_exception_residual_transient_non_zero_rank.............. skipped (skipped dependency)
+misc/exception.parallel_exception_jacobian_transient_non_zero_rank.............. skipped (skipped dependency)
+restart/kernel_restartable.parallel_error2...................................... skipped (skipped dependency)
+restart/restart.test_xda_restart_part_2......................................... skipped (skipped dependency)
+restart/restartable_types.first_parallel........................................ skipped (skipped dependency)
+utils/random.threads_verification_uo............................................ skipped (skipped dependency)
+utils/random.test_par_mesh...................................................... skipped (skipped dependency)
+utils/random.test_uo_par_mesh................................................... skipped (skipped dependency)
+mesh/centroid_partitioner.centroid_partitioner_test.......................................... [MIN_CPUS=4] OK
+mesh/subdomain_partitioner.subdomain_partitioner............................................. [MIN_CPUS=4] OK
+mesh/nemesis.nemesis_test.................................................................... [MIN_CPUS=4] OK
+mesh/ghost_functors.geometric_edge_neighbor_one_2D........................................... [MIN_CPUS=3] OK
+mesh/ghost_functors.geometric_edge_neighbor_two_2D........................................... [MIN_CPUS=3] OK
+mesh/ghost_functors.geometric_edge_neighbor_one_3D_Mac....................................... [MIN_CPUS=3] OK
+mesh/ghost_functors.geometric_edge_neighbor_two_3D_Mac....................................... [MIN_CPUS=3] OK
+ics/depend_on_uo.ic_depend_on_uo............................................................. [MIN_CPUS=2] OK
+mesh/custom_partitioner.custom_linear_partitioner............................................ [MIN_CPUS=2] OK
+misc/exception.parallel_error_jacobian_transient_non_zero_rank............................... [MIN_CPUS=2] OK
+misc/exception.parallel_error_residual_transient_non_zero_rank............................... [MIN_CPUS=2] OK
+postprocessors/all_print_pps.test............................................................ [MIN_CPUS=2] OK
+userobjects/setup_interface_count.GeneralUserObject.......................................... [MIN_CPUS=2] OK
+vectorpostprocessors/csv_reader.tester_fail.................................................. [MIN_CPUS=2] OK
+preconditioners/pbp.check_petsc_options_test................................ FAILED (EXPECTED OUTPUT MISSING)
+executioners/nullspace.test_singular........................................................ FAILED (CSVDIFF)
+executioners/nullspace.test_singular_contaminated........................................... FAILED (CSVDIFF)
+outputs/iterative.csv....................................................................... FAILED (CSVDIFF)
+parser/parser_dependency.testpbp.............................................................. FAILED (CRASH)
+postprocessors/scalar_coupled_postprocessor.test.............................................. FAILED (CRASH)
+preconditioners/pbp.test...................................................................... FAILED (CRASH)
+preconditioners/pbp.pbp_adapt_test............................................................ FAILED (CRASH)
+
+The difference from linux is that on linux, pbp.lots_of_variables fails. This is because lots_of_variables only runs when gcc is the compiler. Ok, glad I figured out what the failure was!!
+
+This is the additional test fail that comes from having my bash directory:
+restart/restart.test_xda_restart_part_2....................................................... FAILED (CRASH)
+
+Wait there's actually more than 8 failures on Mac, there's 9 (this is after appending to my path instead of prepending):
+
+preconditioners/pbp.check_petsc_options_test................................ FAILED (EXPECTED OUTPUT MISSING)
+executioners/nullspace.test_singular........................................................ FAILED (CSVDIFF)
+executioners/nullspace.test_singular_contaminated........................................... FAILED (CSVDIFF)
+outputs/iterative.csv....................................................................... FAILED (CSVDIFF)
+parser/parser_dependency.testpbp.............................................................. FAILED (CRASH)
+postprocessors/scalar_coupled_postprocessor.test.............................................. FAILED (CRASH)
+preconditioners/pbp.pbp_adapt_test............................................................ FAILED (CRASH)
+preconditioners/pbp.test...................................................................... FAILED (CRASH)
+restart/restart.test_xda_restart_part_2....................................................... FAILED (CRASH)
+
+So the additional one is the xda_restart_test. Nope, wrong again. This is the full litany of failing tests on Linux:
+
+preconditioners/pbp.check_petsc_options_test................................ FAILED (EXPECTED OUTPUT MISSING)
+executioners/nullspace.test_singular........................................................ FAILED (CSVDIFF)
+executioners/nullspace.test_singular_contaminated........................................... FAILED (CSVDIFF)
+outputs/iterative.csv....................................................................... FAILED (CSVDIFF)
+postprocessors/scalar_coupled_postprocessor.test.............................................. FAILED (CRASH)
+parser/parser_dependency.testpbp.............................................................. FAILED (CRASH)
+restart/restart.test_xda_restart_part_2....................................................... FAILED (CRASH)
+preconditioners/pbp.pbp_adapt_test............................................................ FAILED (CRASH)
+preconditioners/pbp.test...................................................................... FAILED (CRASH)
+
+That's the exact list of failed tests from mac which is good. Now that lots_of_variables test isn't running on rod because the Petsc version it claims is not a release. I don't know how in the hell it ran before and not now, but not that important.
+
+Here are failing tests on MOOSE HEAD with PETSC HEAD:
+
+outputs/format.json........................................................................... FAILED (CRASH)
+-------------------------------------------------------------------------------------------------------------
+Ran 1481 tests in 262.6 seconds
+1480 passed, 63 skipped, 0 pending, 1 FAILED
+
+And then my feature with PETSC HEAD:
+
+misc/exception.parallel_exception_residual_transient......................................... FAILED (ERRMSG)
+executioners/nullspace.test_singular........................................................ FAILED (CSVDIFF)
+executioners/nullspace.test_singular_contaminated........................................... FAILED (CSVDIFF)
+outputs/iterative.csv....................................................................... FAILED (CSVDIFF)
+outputs/format.json........................................................................... FAILED (CRASH)
+-------------------------------------------------------------------------------------------------------------
+Ran 1478 tests in 321.2 seconds
+1473 passed, 64 skipped, 0 pending, 5 FAILED
+
+# 1/22/18
+
+Want to edit these commits:
+
+792a31c2dd99ab -> Undesirably restores to templated getVariable for a coupled
+varialbe in GapValueAux
+
+faf098727e3b -> restores AuxKernel.C getVar method
+
+c7e8e80f35be -> Adds stupid methods in FEProblemBase
+
+# 1/23/18
+
+Warehouses:
+0x000000010d87ebc0 (feproblem warehouse?)
+0x000000010d887180 (displaced problem warehouse)
+
+All of a sudden with scalar_strain_zz we see a different address!! This is
+becaue there are aux and nonlinear systems for both feproblem and displaced
+problem -> 4 systems, 4 warehouses, 4 sets of variables
+
+0x000000010d87d3a0
+0x000000010d847440
+
+# 1/24/18
+
+dont_reinit_mat_for_aux: additional call for four qp problem increases average
+material property value by four
+picard_failures: counts residual evaluations
+all_print_pps: counts residual evaluations
+iterative: counts non-linear iterations
+
+AFAICT the computing_initial_residual infrastructure is not used for anything.
+
+I'm interested in erroring solves and preferably as small as possible:
+
+generalized_plane_strain_tm_contact: 55 DOFs
+
+It looks like all the single_pnt tests have 22 dofs:
+combined/test:contact_verification/patch_tests/single_pnt_2d.frictionless_kin_sm: 22 dofs
+
+Well it looks in fact like that call to the residual at the end of the Jacobian evaluation really does impact the b vector in the linear solve! I want to look at this in the debugger and see the 1-to-1 correlation between norms.
+
+The result I reported to the Bison team may have been a red herring. That bad behavior in the true residual norm may have been because I had deleted that residual call at the end of the jacobian evaluation. I need to check that tomorrow as well. In Gamble's contact examples and in the single_point glued contact test, I don't see any bad linear solves.
+
+What's interesting is that I don't see any difference between the non-linaer residual and the initial residual in Gamble's sliding block examples even when we see a jump in the value of the non-linear residual. The only place I see it in MOOSE head is the single_point glued contact test. Aww wait on a second:
+
+Here's the single point test:
+ 0 Nonlinear |R| = 5.471838e+03
+
+
+
+
+*** Warning ***
+Warning in PenetrationLocator. Penetration is not detected for one or more slave nodes. This could be because those slave nodes simply do not project to faces on the master surface. However, this could also be because contact should be enforced on those nodes, but the faces that they project to are outside the contact patch, which will give an erroneous result. Use appropriate options for 'patch_size' and 'patch_update_strategy' in the Mesh block to avoid this issue. Setting 'patch_update_strategy=iteration' is recommended because it completely avoids this potential issue. Also note that this warning is printed only once, so a similar situation could occur multiple times during the simulation but this warning is printed only at the first occurrence.
+
+    0 KSP unpreconditioned resid norm 5.471838102659e+03 true resid norm 5.471838102659e+03 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 4.678501661859e+02 true resid norm 4.678501661859e+02 ||r(i)||/||b|| 8.550146356826e-02
+    2 KSP unpreconditioned resid norm 1.002293429030e+02 true resid norm 1.002293653303e+02 ||r(i)||/||b|| 1.831731192514e-02
+    3 KSP unpreconditioned resid norm 1.177693095297e-01 true resid norm 1.177744290695e-01 ||r(i)||/||b|| 2.152374153984e-05
+ 1 Nonlinear |R| = 1.001988e+02
+    0 KSP unpreconditioned resid norm 1.001988279477e+02 true resid norm 1.001988279477e+02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.758050384494e+01 true resid norm 1.758050384494e+01 ||r(i)||/||b|| 1.754561825226e-01
+    2 KSP unpreconditioned resid norm 3.936647766797e+00 true resid norm 3.936652416703e+00 ||r(i)||/||b|| 3.928840783207e-02
+    3 KSP unpreconditioned resid norm 5.889641465133e-06 true resid norm 1.071253408567e-05 ||r(i)||/||b|| 1.069127683935e-07
+ 2 Nonlinear |R| = 5.952291e-02
+    0 KSP unpreconditioned resid norm 4.853631832011e+05 true resid norm 4.853631832011e+05 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 2.128301534340e-01 true resid norm 2.128301534416e-01 ||r(i)||/||b|| 4.384966985710e-07
+ 3 Nonlinear |R| = 2.128295e-01
+    0 KSP unpreconditioned resid norm 2.128294741483e-01 true resid norm 2.128294741483e-01 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 8.795356458619e-02 true resid norm 8.795356458619e-02 ||r(i)||/||b|| 4.132583841508e-01
+    2 KSP unpreconditioned resid norm 1.467021623138e-02 true resid norm 1.469159462127e-02 ||r(i)||/||b|| 6.902988733148e-02
+    3 KSP unpreconditioned resid norm 2.151601016215e-03 true resid norm 2.146514383639e-03 ||r(i)||/||b|| 1.008560676208e-02
+    4 KSP unpreconditioned resid norm 1.887306724317e-05 true resid norm 7.797521920927e-05 ||r(i)||/||b|| 3.663741571571e-04
+ 4 Nonlinear |R| = 4.791060e-04
+    0 KSP unpreconditioned resid norm 4.791059721812e-04 true resid norm 4.791059721812e-04 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 6.189691087299e-06 true resid norm 6.189691087297e-06 ||r(i)||/||b|| 1.291925262196e-02
+    2 KSP unpreconditioned resid norm 5.542834546634e-07 true resid norm 5.542457829175e-07 ||r(i)||/||b|| 1.156833383634e-03
+    3 KSP unpreconditioned resid norm 1.069465737333e-07 true resid norm 1.069637665094e-07 ||r(i)||/||b|| 2.232570093468e-04
+    4 KSP unpreconditioned resid norm 3.167781033623e-08 true resid norm 3.169346953559e-08 ||r(i)||/||b|| 6.615127211064e-05
+ 5 Nonlinear |R| = 3.920824e-05
+
+The difference in the nonlinear and linear appears BEFORE the non-linear residual jump. Yea ok, I see it in Gamble's frictionless example now:
+
+ 0 Nonlinear |R| = 1.156441e+04
+    0 KSP unpreconditioned resid norm 1.156441422999e+04 true resid norm 1.156441422999e+04 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.896997695292e+03 true resid norm 1.896997695292e+03 ||r(i)||/||b|| 1.640375083049e-01
+    2 KSP unpreconditioned resid norm 4.635223532666e+02 true resid norm 4.635223584851e+02 ||r(i)||/||b|| 4.008178445244e-02
+    3 KSP unpreconditioned resid norm 1.344740928203e+02 true resid norm 1.344740498281e+02 ||r(i)||/||b|| 1.162826297587e-02
+    4 KSP unpreconditioned resid norm 3.914128450523e+01 true resid norm 3.914129070054e+01 ||r(i)||/||b|| 3.384632366337e-03
+    5 KSP unpreconditioned resid norm 2.093572162613e+01 true resid norm 2.093571798586e+01 ||r(i)||/||b|| 1.810356976973e-03
+    6 KSP unpreconditioned resid norm 7.948710377665e+00 true resid norm 7.948713576559e+00 ||r(i)||/||b|| 6.873425163161e-04
+    7 KSP unpreconditioned resid norm 2.443833325685e+00 true resid norm 2.443856329107e+00 ||r(i)||/||b|| 2.113255613735e-04
+    8 KSP unpreconditioned resid norm 7.000606319562e-01 true resid norm 7.000716210966e-01 ||r(i)||/||b|| 6.053671264052e-05
+    9 KSP unpreconditioned resid norm 1.284004334384e-01 true resid norm 1.283851336321e-01 ||r(i)||/||b|| 1.110174117589e-05
+   10 KSP unpreconditioned resid norm 3.216353937173e-02 true resid norm 3.214272227083e-02 ||r(i)||/||b|| 2.779450963239e-06
+   11 KSP unpreconditioned resid norm 1.193724034104e-02 true resid norm 1.197067846507e-02 ||r(i)||/||b|| 1.035130550238e-06
+   12 KSP unpreconditioned resid norm 5.540335325403e-03 true resid norm 5.527515018594e-03 ||r(i)||/||b|| 4.779762215938e-07
+ 1 Nonlinear |R| = 4.159738e+01
+    0 KSP unpreconditioned resid norm 1.626348731637e+04 true resid norm 1.626348731637e+04 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 2.272855560343e+03 true resid norm 2.272855560345e+03 ||r(i)||/||b|| 1.397520418673e-01
+    2 KSP unpreconditioned resid norm 6.001377005647e+02 true resid norm 6.001377019633e+02 ||r(i)||/||b|| 3.690092354050e-02
+    3 KSP unpreconditioned resid norm 1.608064348230e+02 true resid norm 1.608064438551e+02 ||r(i)||/||b|| 9.887574585141e-03
+    4 KSP unpreconditioned resid norm 7.621451694899e+01 true resid norm 7.621452253879e+01 ||r(i)||/||b|| 4.686234941880e-03
+    5 KSP unpreconditioned resid norm 2.279501219400e+01 true resid norm 2.279503347433e+01 ||r(i)||/||b|| 1.401607971950e-03
+    6 KSP unpreconditioned resid norm 7.514032870307e+00 true resid norm 7.514029137087e+00 ||r(i)||/||b|| 4.620183230643e-04
+    7 KSP unpreconditioned resid norm 3.547806137979e+00 true resid norm 3.547829780153e+00 ||r(i)||/||b|| 2.181469269867e-04
+    8 KSP unpreconditioned resid norm 1.318728592824e+00 true resid norm 1.318735784576e+00 ||r(i)||/||b|| 8.108567116778e-05
+    9 KSP unpreconditioned resid norm 4.605053015476e-01 true resid norm 4.604968123355e-01 ||r(i)||/||b|| 2.831476443997e-05
+   10 KSP unpreconditioned resid norm 1.577946682316e-01 true resid norm 1.578018661445e-01 ||r(i)||/||b|| 9.702830830484e-06
+   11 KSP unpreconditioned resid norm 4.567006979969e-02 true resid norm 4.567037691790e-02 ||r(i)||/||b|| 2.808153997324e-06
+   12 KSP unpreconditioned resid norm 1.392599441462e-02 true resid norm 1.393336072663e-02 ||r(i)||/||b|| 8.567265098556e-07
+ 2 Nonlinear |R| = 7.051010e+01
+    0 KSP unpreconditioned resid norm 7.051009946857e+01 true resid norm 7.051009946857e+01 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 4.762990670694e+01 true resid norm 4.762990670197e+01 ||r(i)||/||b|| 6.755047441565e-01
+    2 KSP unpreconditioned resid norm 1.868190829187e+01 true resid norm 1.868190841005e+01 ||r(i)||/||b|| 2.649536527512e-01
+    3 KSP unpreconditioned resid norm 5.552020468490e+00 true resid norm 5.552020550776e+00 ||r(i)||/||b|| 7.874078454890e-02
+    4 KSP unpreconditioned resid norm 1.450845044848e+00 true resid norm 1.450845093875e+00 ||r(i)||/||b|| 2.057641536191e-02
+    5 KSP unpreconditioned resid norm 3.782391419499e-01 true resid norm 3.782402065688e-01 ||r(i)||/||b|| 5.364340845065e-03
+    6 KSP unpreconditioned resid norm 1.353022251310e-01 true resid norm 1.353025559080e-01 ||r(i)||/||b|| 1.918910296933e-03
+    7 KSP unpreconditioned resid norm 6.591479020965e-02 true resid norm 6.591418659061e-02 ||r(i)||/||b|| 9.348190838958e-04
+    8 KSP unpreconditioned resid norm 2.135320277714e-02 true resid norm 2.135282139184e-02 ||r(i)||/||b|| 3.028335167979e-04
+    9 KSP unpreconditioned resid norm 8.603092060783e-03 true resid norm 8.603683929768e-03 ||r(i)||/||b|| 1.220205898816e-04
+   10 KSP unpreconditioned resid norm 2.414808727770e-03 true resid norm 2.414551185262e-03 ||r(i)||/||b|| 3.424404735578e-05
+   11 KSP unpreconditioned resid norm 5.878644910138e-04 true resid norm 5.872373510015e-04 ||r(i)||/||b|| 8.328414729628e-06
+   12 KSP unpreconditioned resid norm 1.787192897719e-04 true resid norm 1.785460763661e-04 ||r(i)||/||b|| 2.532205708286e-06
+   13 KSP unpreconditioned resid norm 8.064898654405e-05 true resid norm 8.036627284175e-05 ||r(i)||/||b|| 1.139783852916e-06
+   14 KSP unpreconditioned resid norm 2.916973178606e-05 true resid norm 2.949701270160e-05 ||r(i)||/||b|| 4.183374144118e-07
+ 3 Nonlinear |R| = 4.138528e-02
+
+And in the Gamble penalty example:
+
+ 0 Nonlinear |R| = 1.156441e+04
+    0 KSP unpreconditioned resid norm 1.156441422995e+04 true resid norm 1.156441422995e+04 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 4.127321108483e+01 true resid norm 4.127321108483e+01 ||r(i)||/||b|| 3.568984149491e-03
+    2 KSP unpreconditioned resid norm 5.942924286114e-01 true resid norm 5.942678624979e-01 ||r(i)||/||b|| 5.138763197871e-05
+    3 KSP unpreconditioned resid norm 8.196865808799e-03 true resid norm 8.143681645983e-03 ||r(i)||/||b|| 7.042018284760e-07
+ 1 Nonlinear |R| = 4.159728e+01
+    0 KSP unpreconditioned resid norm 2.489921379810e+05 true resid norm 2.489921379810e+05 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.682255939819e+03 true resid norm 1.682255440180e+03 ||r(i)||/||b|| 6.756259269150e-03
+    2 KSP unpreconditioned resid norm 3.475328940525e+02 true resid norm 3.475329851678e+02 ||r(i)||/||b|| 1.395758870083e-03
+    3 KSP unpreconditioned resid norm 2.802467958181e+02 true resid norm 2.802470187309e+02 ||r(i)||/||b|| 1.125525572829e-03
+    4 KSP unpreconditioned resid norm 2.618527049893e+02 true resid norm 2.618536041161e+02 ||r(i)||/||b|| 1.051654105384e-03
+    5 KSP unpreconditioned resid norm 2.261539117820e+02 true resid norm 2.261552807474e+02 ||r(i)||/||b|| 9.082828180088e-04
+    6 KSP unpreconditioned resid norm 1.861661249814e+02 true resid norm 1.861667621989e+02 ||r(i)||/||b|| 7.476812870818e-04
+    7 KSP unpreconditioned resid norm 3.471621561051e+01 true resid norm 3.471608650988e+01 ||r(i)||/||b|| 1.394264364786e-04
+    8 KSP unpreconditioned resid norm 2.787056786458e-02 true resid norm 2.843882954681e-02 ||r(i)||/||b|| 1.142157731461e-07
+ 2 Nonlinear |R| = 2.573203e+03
+    0 KSP unpreconditioned resid norm 2.573203431198e+03 true resid norm 2.573203431198e+03 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.696535044472e+02 true resid norm 1.696534382603e+02 ||r(i)||/||b|| 6.593083010981e-02
+    2 KSP unpreconditioned resid norm 2.175582749333e+00 true resid norm 2.175437199198e+00 ||r(i)||/||b|| 8.454198268283e-04
+    3 KSP unpreconditioned resid norm 5.426933937643e-03 true resid norm 5.442604806649e-03 ||r(i)||/||b|| 2.115108638773e-06
+    4 KSP unpreconditioned resid norm 3.203630197162e-05 true resid norm 2.932633631562e-04 ||r(i)||/||b|| 1.139681999490e-07
+ 3 Nonlinear |R| = 5.835372e+02
+
+Yea, I think I may have raised a red herring! Gotta do those two checks tomorrow!:
+
+1) See that initial residual norm matches the residual norm that appears from that extraneous FEProblemBase::computeResidual call
+2) Run the Gamble example with the new feature and see whether the bad linear solve appears. We already see the bad linear solve appears in the single_point test.
+
+Both the hypotheses were confirmed!
+
+# 1/25/18
+
+New moose formulation:
+
+Time Step  1, time = 0.001
+                dt = 0.001
+
+
+
+
+*** Warning ***
+Unchanged contact state. 0 nodes in contact.
+
+
+ 0 Nonlinear |R| = 5.471838e+03
+
+
+
+
+*** Warning ***
+Warning in PenetrationLocator. Penetration is not detected for one or more slave nodes. This could be because those slave nodes simply do not project to faces on the master surface. However, this could also be because contact should be enforced on those nodes, but the faces that they project to are outside the contact patch, which will give an erroneous result. Use appropriate options for 'patch_size' and 'patch_update_strategy' in the Mesh block to avoid this issue. Setting 'patch_update_strategy=iteration' is recommended because it completely avoids this potential issue. Also note that this warning is printed only once, so a similar situation could occur multiple times during the simulation but this warning is printed only at the first occurrence.
+
+    0 KSP unpreconditioned resid norm 5.471838102659e+03 true resid norm 5.471838102659e+03 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 4.678501661859e+02 true resid norm 4.678501661859e+02 ||r(i)||/||b|| 8.550146356826e-02
+    2 KSP unpreconditioned resid norm 1.002293429030e+02 true resid norm 1.002293653303e+02 ||r(i)||/||b|| 1.831731192514e-02
+    3 KSP unpreconditioned resid norm 1.177693095297e-01 true resid norm 1.177744290694e-01 ||r(i)||/||b|| 2.152374153983e-05
+
+
+
+
+*** Warning ***
+Unchanged contact state. 0 nodes in contact.
+
+
+ 1 Nonlinear |R| = 1.001988e+02
+    0 KSP unpreconditioned resid norm 1.001988279477e+02 true resid norm 1.001988279477e+02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.758050384721e+01 true resid norm 1.758050384721e+01 ||r(i)||/||b|| 1.754561825453e-01
+    2 KSP unpreconditioned resid norm 3.936647788769e+00 true resid norm 3.936652454164e+00 ||r(i)||/||b|| 3.928840820593e-02
+    3 KSP unpreconditioned resid norm 5.890404501950e-06 true resid norm 1.075864981744e-05 ||r(i)||/||b|| 1.073730106210e-07
+
+
+
+
+*** Warning ***
+Changed contact state!!! 1 nodes in contact.
+
+
+ 2 Nonlinear |R| = 6.864072e+04
+ Solve Did NOT Converge!
+
+Old moose formulation:
+
+ 0 Nonlinear |R| = 5.471838e+03
+
+
+
+
+*** Warning ***
+Warning in PenetrationLocator. Penetration is not detected for one or more slave nodes. This could be because those slave nodes simply do not project to faces on the master surface. However, this could also be because contact should be enforced on those nodes, but the faces that they project to are outside the contact patch, which will give an erroneous result. Use appropriate options for 'patch_size' and 'patch_update_strategy' in the Mesh block to avoid this issue. Setting 'patch_update_strategy=iteration' is recommended because it completely avoids this potential issue. Also note that this warning is printed only once, so a similar situation could occur multiple times during the simulation but this warning is printed only at the first occurrence.
+
+    0 KSP unpreconditioned resid norm 5.471838102659e+03 true resid norm 5.471838102659e+03 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 4.678501661859e+02 true resid norm 4.678501661859e+02 ||r(i)||/||b|| 8.550146356826e-02
+    2 KSP unpreconditioned resid norm 1.002293429030e+02 true resid norm 1.002293653303e+02 ||r(i)||/||b|| 1.831731192514e-02
+    3 KSP unpreconditioned resid norm 1.177693095297e-01 true resid norm 1.177744290695e-01 ||r(i)||/||b|| 2.152374153984e-05
+ 1 Nonlinear |R| = 1.001988e+02
+    0 KSP unpreconditioned resid norm 1.001988279477e+02 true resid norm 1.001988279477e+02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.758050384494e+01 true resid norm 1.758050384494e+01 ||r(i)||/||b|| 1.754561825226e-01
+    2 KSP unpreconditioned resid norm 3.936647766797e+00 true resid norm 3.936652416703e+00 ||r(i)||/||b|| 3.928840783207e-02
+    3 KSP unpreconditioned resid norm 5.889641465133e-06 true resid norm 1.071253408567e-05 ||r(i)||/||b|| 1.069127683935e-07
+ 2 Nonlinear |R| = 5.952291e-02
+    0 KSP unpreconditioned resid norm 6.864072015663e+04 true resid norm 6.864072015663e+04 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 2.128325520873e-01 true resid norm 2.128325520873e-01 ||r(i)||/||b|| 3.100674812293e-06
+ 3 Nonlinear |R| = 2.128319e-01
+    0 KSP unpreconditioned resid norm 2.128318588363e-01 true resid norm 2.128318588363e-01 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 8.200018646607e-02 true resid norm 8.200018646607e-02 ||r(i)||/||b|| 3.852815406228e-01
+    2 KSP unpreconditioned resid norm 1.454185608691e-02 true resid norm 1.454184957463e-02 ||r(i)||/||b|| 6.832553008810e-02
+    3 KSP unpreconditioned resid norm 1.937920074349e-03 true resid norm 1.938542579923e-03 ||r(i)||/||b|| 9.108328943433e-03
+    4 KSP unpreconditioned resid norm 1.592210243984e-05 true resid norm 1.778242896603e-05 ||r(i)||/||b|| 8.355153717711e-05
+ 4 Nonlinear |R| = 6.479389e-05
+ Solve Converged!
+
+Ok, here's the new solve after removing the divergence threshold criteria:
+
+ 0 Nonlinear |R| = 5.471838e+03
+
+*** Warning ***
+Warning in PenetrationLocator. Penetration is not detected for one or more slave nodes. This could be because those slave nodes simply do not project to faces on the master surface. However, this could also be because contact should be enforced on those nodes, but the faces that they project to are outside the contact patch, which will give an erroneous result. Use appropriate options for 'patch_size' and 'patch_update_strategy' in the Mesh block to avoid this issue. Setting 'patch_update_strategy=iteration' is recommended because it completely avoids this potential issue. Also note that this warning is printed only once, so a similar situation could occur multiple times during the simulation but this warning is printed only at the first occurrence.
+
+    0 KSP unpreconditioned resid norm 5.471838102659e+03 true resid norm 5.471838102659e+03 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 4.678501661859e+02 true resid norm 4.678501661859e+02 ||r(i)||/||b|| 8.550146356826e-02
+    2 KSP unpreconditioned resid norm 1.002293429030e+02 true resid norm 1.002293653303e+02 ||r(i)||/||b|| 1.831731192514e-02
+    3 KSP unpreconditioned resid norm 1.177693095297e-01 true resid norm 1.177744290694e-01 ||r(i)||/||b|| 2.152374153983e-05
+
+*** Warning ***
+Unchanged contact state. 0 nodes in contact.
+
+1 Nonlinear |R| = 1.001988e+02
+    0 KSP unpreconditioned resid norm 1.001988279477e+02 true resid norm 1.001988279477e+02 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.758050384721e+01 true resid norm 1.758050384721e+01 ||r(i)||/||b|| 1.754561825453e-01
+    2 KSP unpreconditioned resid norm 3.936647788769e+00 true resid norm 3.936652454164e+00 ||r(i)||/||b|| 3.928840820593e-02
+    3 KSP unpreconditioned resid norm 5.890404501950e-06 true resid norm 1.075864981744e-05 ||r(i)||/||b|| 1.073730106210e-07
+
+*** Warning ***
+Changed contact state!!! 1 nodes in contact.
+ 2 Nonlinear |R| = 6.864072e+04
+    0 KSP unpreconditioned resid norm 6.864071920856e+04 true resid norm 6.864071920856e+04 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 2.128325469796e-01 true resid norm 2.128325469796e-01 ||r(i)||/||b|| 3.100674780707e-06
+
+
+
+
+*** Warning ***
+Unchanged contact state. 1 nodes in contact.
+
+
+ 3 Nonlinear |R| = 2.128319e-01
+    0 KSP unpreconditioned resid norm 2.128318538346e-01 true resid norm 2.128318538346e-01 ||r(i)||/||b|| 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 8.200018517062e-02 true resid norm 8.200018517062e-02 ||r(i)||/||b|| 3.852815435905e-01
+    2 KSP unpreconditioned resid norm 1.454185596452e-02 true resid norm 1.454184940907e-02 ||r(i)||/||b|| 6.832553091594e-02
+    3 KSP unpreconditioned resid norm 1.937920511222e-03 true resid norm 1.938141877382e-03 ||r(i)||/||b|| 9.106446438644e-03
+    4 KSP unpreconditioned resid norm 1.592182732237e-05 true resid norm 5.384435098530e-05 ||r(i)||/||b|| 2.529900953038e-04
+
+
+
+
+*** Warning ***
+Unchanged contact state. 1 nodes in contact.
+
+
+ 4 Nonlinear |R| = 6.479389e-05
+ Solve Converged!
+
+And then after removing the residual call, the same result!
+
+# 2/8/17
+
+What does our residual object expect?
+
+It expects the solution, residual vector to fill, and the
+`NonlinearImplicitSystem & sys`
+
+# 2/9/18
+
+good commit: 550de36fb
+timing: 49.643s
+
+bad commit: 2ac908c3f
+timing: 1m59.923s
+
+good commit: 70e48bcf8
+timing = 41.7s
+
+--with-thread-model=none
+
+libmesh update commit cdeee5648 --with-thread-model=none
+timing = 1m27.849s
+
+2ac908c3f --with-thread-model=none
+timing = 1m18.523s
+Pyc tests:
+test:pyc_irr_strain.test_dense ................................................................... OK [10.15s]
+test:pyc_irr_strain.test_buffer .................................................................. OK [14.84s]
+
+550de36fb --with-thread-model=none
+timing = 1m27.232s
+Pyc tests:
+test:pyc_irr_strain.test_dense ................................................................... OK [11.39s]
+test:pyc_irr_strain.test_buffer .................................................................. OK [15.22s]
+
+835d924d4 --with-thread-model=none
+timing = 1m28.172s
+Pyc tests:
+test:pyc_irr_strain.test_dense ................................................................... OK [11.36s]
+test:pyc_irr_strain.test_buffer .................................................................. OK [14.36s]
+
+835d924d4 --with-thread-model=
+Pyc tests:
+test:pyc_irr_strain.test_dense ................................................................... OK [1.296s]
+test:pyc_irr_strain.test_buffer .................................................................. OK [1.749s]
+
+
+2ac908c3f --with-thread-model=
+Pyc tests:
+test:pyc_irr_strain.test_dense ................................................................... OK [13.87s]
+test:pyc_irr_strain.test_buffer .................................................................. OK [17.77s]
+
+# 2/15/18
+
+Commit message for app fixes:
+
+Updates to MooseVariableInterface and variable getter APIs to incorporate vector finite elements
+
+Needs to wait for https://github.com/idaholab/moose/pull/10238
+
+issue message:
+
+Update MooseVariableInterface and other APIs for incorporation of vector finite elements
+
+issue content:
+
+The [MOOSE vector PR](https://github.com/idaholab/moose/pull/10238) is about ready to go and it has some API changes that will require some changes in apps.
+
+# 2/22/18
+
+Ok, currently I am able to run all tests flawlessly on cone both with gcc and
+clang compilations. Currently building a gcc version on Mac and going to test
+that. I'm beginning to hypothesize that it could be an environment issue...well
+no it can't be that because I just ran with gcc build on my Mac, and everything
+passed! Wtf!!!
+
+# 3/5/18
+
+Total non-linear iterations with `num_cuts = 2` and `contact_ltol = ltol`: 149
+Active time = 5.78 seconds
+
+Total non-linear iterations with `num_cuts = 0` and `contact_ltol = .5`: 132
+Active time = 4.47 seconds
+
+sliding block problem:
+
+2 lambda-cuts, 10 steps, .5 contact tolerance, asm
+NEWTON, FD: 10 steps, 59 non-linear its
+PJFNK, FD: 10 steps, 60 non-linear its
+PJFNK, SMP: 10 steps, 65 non-linear its
+NEWTON, SMP: 10 steps, 60 non-linear its
+
+2 lambda-cuts, 10 steps, 1e-6 contact tolerance, asm
+NEWTON, FD: 10 steps, 48 non-linear its
+PJFNK, FD: 10 steps, 48 non-linear its
+PJFNK, SMP: 10 steps, 51 non-linear its
+NEWTON, SMP: 10 steps, 53 non-linear its
+
+2 lambda-cuts, 30 steps, 1e-6 contact tolerance, asm
+PJFNK, FD: 30 steps, 134 non-linear its
+PJFNK, SMP: 30 steps, 149 non-linear its, active 9.18
+NEWTON, FD: 30 steps, 134 non-linear its
+
+2 lambda-cuts, 30 steps, .5 contact tolerance, asm
+PJFNK, FD: 30 steps, 156 non-linear its
+PJFNK, SMP: 30 steps, 166 non-linear its, active 8.66
+
+0 lambda-cuts, 30 steps, 1e-6 contact tolerance, asm
+PJFNK, SMP: 35 steps, 151 non-linear its, active 23.28
+PJFNK, FD: witness jamming! 35 steps, 147 non-linear its
+
+0 lambda-cuts, 30 steps, .5 contact tolerance, asm
+PJFNK, SMP: 33 steps, 166 non-linear its, active 9.64
+
+2 lambda-cuts, 30 steps, 1e-6 contact tolerance, lu
+NEWTON, FD: 30 steps, 134 non-linear its
+
+Verified through `-snes_view` and through `-mat_mffd_type` that NEWTON and PJFNK
+with `-snes_fd` are really truly different
+
+I think the clearest test of whether a linear system is well scaled is to
+use PJFNK with a finite differenced preconditioner (most accurately with full
+differencing, less accurately with coloring) (and perhaps to use a line
+search because then the solve is likely to demonstrate bad behavior earlier) and
+then observe whether the true residual matches the unpreconditioned residual. So
+Zapdos I believe is poorly scaled and eventually I want to develop an
+algorithm/diagnostic that reveals and suggests how to scale one's variables to
+create the best conditioned system.
+
+Another clear way to tell whether a system is well scaled is to run with
+`-pc_type svd -pc_svd_monitor`!! I tested that when I run with an `asm`
+preconditioner, then the Zapdos problem converges. However, as soon as I turn to
+the `svd` "preconditioner", then the problem no longer converges and I see
+absolutely horrendous condition numbers!:
+
+Time Step  1, time = 1e-11
+                dt = 1e-11
+    |residual|_2 of individual variables:
+                  potential: 88500
+                  em:        0.676043
+                  emliq:     860.265
+                  Arp:       0.427591
+                  mean_en:   40.3082
+                  OHm:       4274.12
+
+ 0 Nonlinear |R| = 8.860733e+04
+      SVD: condition number 2.861482635029e+18, 0 of 1039 singular values are (nearly) zero
+      SVD: smallest singular values: 6.605894949746e-08 3.360421490264e-07 9.160910535765e-07 1.566311893390e-06 2.211462057380e-06
+      SVD: largest singular values : 5.152086167118e+10 6.803285617521e+10 9.166842564772e+10 1.275351988992e+11 1.890265368752e+11
+    0 KSP unpreconditioned resid norm 8.860733466940e+04 true resid norm 8.860733466940e+04 ||r(i)||/||b|| 1.000000000000e+00
+    0 KSP Residual norm 8.860733466940e+04 % max 1.000000000000e+00 min 1.000000000000e+00 max/min 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 9.555721572811e-04 true resid norm 8.776899730270e-04 ||r(i)||/||b|| 9.905387362138e-09
+    1 KSP Residual norm 9.555721572811e-04 % max 1.000000007606e+00 min 1.000000007606e+00 max/min 1.000000000000e+00
+      Line search: Using full step: fnorm 8.860733466940e+04 gnorm 3.006870853434e+04
+    |residual|_2 of individual variables:
+                  potential: 1.8996
+                  em:        247.828
+                  emliq:     11356.5
+                  Arp:       247.942
+                  mean_en:   27839.4
+                  OHm:       0.000686369
+
+ 1 Nonlinear |R| = 3.006871e+04
+      SVD: condition number 5.058219757856e+19, 0 of 1039 singular values are (nearly) zero
+      SVD: smallest singular values: 3.737016564828e-09 3.269299464171e-08 2.863796025981e-07 5.908120410986e-07 1.047076750051e-06
+      SVD: largest singular values : 5.152084352599e+10 6.803283729982e+10 9.166840542000e+10 1.275351763691e+11 1.890265102365e+11
+    0 KSP unpreconditioned resid norm 3.006870853434e+04 true resid norm 3.006870853434e+04 ||r(i)||/||b|| 1.000000000000e+00
+    0 KSP Residual norm 3.006870853434e+04 % max 1.000000000000e+00 min 1.000000000000e+00 max/min 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.742836466488e-02 true resid norm 1.739977094151e-02 ||r(i)||/||b|| 5.786670525487e-07
+    1 KSP Residual norm 1.742836466488e-02 % max 9.999999983198e-01 min 9.999999983198e-01 max/min 1.000000000000e+00
+Nonlinear solve did not converge due to DIVERGED_LINE_SEARCH iterations 1
+
+Yes, definitely need a good diagostic/algorithm for creating a good matrix!!!
+
+# 3/6/18
+
+So even for an ideal preconditioner and approximation of the Jacobian, which
+means that the linear solve is optimal, a line-search can be absolutely
+necessary in contact to avoid jamming.
+
+# 3/7/18
+
+So even with diagonal scaling kind of like how I think it should be, the initial condition number
+is still terrible:
+
+ 0 Nonlinear |R| = 8.624066e+02
+The minimum diagonal entry for variable 0 is 0.374576
+The maximum diagonal entry for variable 0 is 16159.2
+The minimum diagonal occurs at node id 102 which has coordinates (0.5,0,0,)
+The maximum diagonal occurs at node id 210 which has coordinates (0.999999,0,0,)
+The minimum diagonal entry for variable 1 is 0.1416
+The maximum diagonal entry for variable 1 is 11736.7
+The maximum diagonal occurs at node id 212 which has coordinates (1,0,0,)
+The minimum diagonal occurs at node id 270 which has coordinates (1.6,0,0,)
+The minimum diagonal entry for variable 2 is 0.376852
+The maximum diagonal entry for variable 2 is 616.21
+The minimum diagonal occurs at node id 76 which has coordinates (0.0378194,0,0,)
+The maximum diagonal occurs at node id 210 which has coordinates (0.999999,0,0,)
+The minimum diagonal entry for variable 3 is 0.380591
+The maximum diagonal entry for variable 3 is 565.643
+The maximum diagonal occurs at node id 212 which has coordinates (1,0,0,)
+The minimum diagonal occurs at node id 252 which has coordinates (1.01711,0,0,)
+The minimum diagonal entry for variable 4 is 0.129553
+The maximum diagonal entry for variable 4 is 247.431
+The maximum diagonal occurs at node id 102 which has coordinates (0.5,0,0,)
+The minimum diagonal occurs at node id 186 which has coordinates (0.99989,0,0,)
+The minimum diagonal entry for variable 5 is 0.210796
+The maximum diagonal entry for variable 5 is 279.172
+The minimum diagonal occurs at node id 131 which has coordinates (0.971904,0,0,)
+The maximum diagonal occurs at node id 210 which has coordinates (0.999999,0,0,)
+The minimum diagonal entry for variable 6 is 0.895257
+The maximum diagonal entry for variable 6 is 1466.66
+The maximum diagonal occurs at node id 212 which has coordinates (1,0,0,)
+The minimum diagonal occurs at node id 253 which has coordinates (1.02087,0,0,)
+      SVD: condition number 1.799242736290e+13, 0 of 1040 singular values are (nearly) zero
+      SVD: smallest singular values: 5.283618013495e-05 2.022141576985e-04 2.097912129974e-04 3.519080816676e-04 5.001484338878e-04
+      SVD: largest singular values : 3.499345949675e+07 4.710631597814e+07 6.545521519716e+07 9.683473798936e+07 9.506511332114e+08
+    0 KSP unpreconditioned resid norm 8.624065720871e+02 true resid norm 8.624065720871e+02 ||r(i)||/||b|| 1.000000000000e+00
+    0 KSP Residual norm 8.624065720871e+02 % max 1.000000000000e+00 min 1.000000000000e+00 max/min 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.741274620680e-06 true resid norm 1.736671811022e-06 ||r(i)||/||b|| 2.013750668457e-09
+    1 KSP Residual norm 1.741274620680e-06 % max 1.000000000973e+00 min 1.000000000973e+00 max/min 1.000000000000e+00
+      Line search: Using full step: fnorm 8.624065720871e+02 gnorm 7.307267181252e+02
+    |residual|_2 of individual variables:
+               potential:    16.5556
+               potentialliq: 2.43247e-09
+               em:           0.665784
+               emliq:        727.695
+               Arp:          63.7654
+               mean_en:      8.97804
+               OHm:          0.0102765
+
+This is undoubtedly why IMO, `-snes_fd` with NEWTON fails. `-snes_fd` with PJFNK
+succeeds for the above conditioning (includes split potential variables and
+manual scaling to get all the minimum diagonal entries between .1 and
+1). `-snes_fd` with PJFNK for non-split potential variables and no manual
+scaling fails. Its condition number is 2.861482635029e+18
+
+# 3/12/18
+
+Ok, it's not really that there is a large non-uniformity in the mesh...it's that
+the mesh is just very fine. See here for a uniformly fine mesh:
+
+Time Step  2, time = 2.2
+                dt = 1.2
+    |residual|_2 of individual variables:
+                  potential: 3.94887
+
+ 0 Nonlinear |R| = 3.948868e+00
+    0 KSP unpreconditioned resid norm 3.948868221119e+00 true resid norm 3.948868221119e+00 ||r(i)||/||b|| 1.000000000000e+00
+    0 KSP Residual norm 3.948868221119e+00 % max 1.000000000000e+00 min 1.000000000000e+00 max/min 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.990356128632e-01 true resid norm 1.990356128632e-01 ||r(i)||/||b|| 5.040320459384e-02
+    1 KSP Residual norm 1.990356128632e-01 % max 1.001232121095e+00 min 1.001232121095e+00 max/min 1.000000000000e+00
+    2 KSP unpreconditioned resid norm 7.494869387932e-06 true resid norm 1.940997537159e-01 ||r(i)||/||b|| 4.915326185813e-02
+    2 KSP Residual norm 7.494869387932e-06 % max 1.025538261374e+00 min 9.750729425046e-01 max/min 1.051755429435e+00
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+      Line search: Using full step: fnorm 3.948868221119e+00 gnorm 1.992859727569e-01
+    |residual|_2 of individual variables:
+                  potential: 0.199286
+
+ 1 Nonlinear |R| = 1.992860e-01
+    0 KSP unpreconditioned resid norm 1.992859727569e-01 true resid norm 1.992859727569e-01 ||r(i)||/||b|| 1.000000000000e+00
+    0 KSP Residual norm 1.992859727569e-01 % max 1.000000000000e+00 min 1.000000000000e+00 max/min 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 4.988633256152e-07 true resid norm 4.988633256139e-07 ||r(i)||/||b|| 2.503253584348e-06
+    1 KSP Residual norm 4.988633256152e-07 % max 9.999999877377e-01 min 9.999999877377e-01 max/min 1.000000000000e+00
+  Linear solve converged due to CONVERGED_RTOL iterations 1
+      Line search: Using full step: fnorm 1.992859727569e-01 gnorm 2.439376445365e-09
+    |residual|_2 of individual variables:
+                  potential: 2.43938e-09
+
+ 2 Nonlinear |R| = 2.439376e-09
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 2
+ Solve Converged!
+
+Time Step  3, time = 3.64
+                dt = 1.44
+    |residual|_2 of individual variables:
+                  potential: 1.30316
+
+ 0 Nonlinear |R| = 1.303162e+00
+    0 KSP unpreconditioned resid norm 1.303161773291e+00 true resid norm 1.303161773291e+00 ||r(i)||/||b|| 1.000000000000e+00
+    0 KSP Residual norm 1.303161773291e+00 % max 1.000000000000e+00 min 1.000000000000e+00 max/min 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.693458093212e-01 true resid norm 1.693458093212e-01 ||r(i)||/||b|| 1.299499515655e-01
+    1 KSP Residual norm 1.693458093212e-01 % max 1.008552587316e+00 min 1.008552587316e+00 max/min 1.000000000000e+00
+    2 KSP unpreconditioned resid norm 4.582570360308e-07 true resid norm 1.866187828918e-01 ||r(i)||/||b|| 1.432046171985e-01
+    2 KSP Residual norm 4.582570360308e-07 % max 1.067676229802e+00 min 9.366148698752e-01 max/min 1.139930898112e+00
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+      Line search: Using full step: fnorm 1.303161773291e+00 gnorm 1.707939094624e-01
+    |residual|_2 of individual variables:
+                  potential: 0.170794
+
+This small grid phenomenon appears regardless of whether the SMP or FDP
+preconditioner is being used. If time is brought closer to the scale of
+position, then the solve phenonemon improves.
+
+h = .05, dt = 100
+ 0 Nonlinear |R| = 6.233634e-01
+    0 KSP unpreconditioned resid norm 6.233634244705e-01 true resid norm 6.233634244705e-01 ||r(i)||/||b|| 1.000000000000e+00
+    0 KSP Residual norm 6.233634244705e-01 % max 1.000000000000e+00 min 1.000000000000e+00 max/min 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 6.220398834842e-01 true resid norm 6.220398834842e-01 ||r(i)||/||b|| 9.978767747122e-01
+    1 KSP Residual norm 6.220398834842e-01 % max 1.282619683911e+01 min 1.282619683911e+01 max/min 1.000000000000e+00
+    2 KSP unpreconditioned resid norm 4.462370692421e-01 true resid norm 4.464352564690e-01 ||r(i)||/||b|| 7.161717209318e-01
+    2 KSP Residual norm 4.462370692421e-01 % max 1.285706033192e+01 min 8.185998316272e-02 max/min 1.570616048914e+02
+    3 KSP unpreconditioned resid norm 6.852284705053e-02 true resid norm 6.891985496232e-02 ||r(i)||/||b|| 1.105612749430e-01
+    3 KSP Residual norm 6.852284705053e-02 % max 1.285710477534e+01 min 5.701834422349e-02 max/min 2.254906723518e+02
+    4 KSP unpreconditioned resid norm 8.408012471952e-03 true resid norm 1.640573974848e-02 ||r(i)||/||b|| 2.631809808607e-02
+    4 KSP Residual norm 8.408012471952e-03 % max 1.285711729096e+01 min 5.666838090950e-02 max/min 2.268834416055e+02
+    5 KSP unpreconditioned resid norm 7.383323102654e-04 true resid norm 1.200371623552e-02 ||r(i)||/||b|| 1.925636918097e-02
+    5 KSP Residual norm 7.383323102654e-04 % max 1.285721649731e+01 min 5.666604583012e-02 max/min 2.268945416776e+02
+    6 KSP unpreconditioned resid norm 7.227659694176e-05 true resid norm 1.293304604821e-02 ||r(i)||/||b|| 2.074720065457e-02
+    6 KSP Residual norm 7.227659694176e-05 % max 1.285789863589e+01 min 5.666258319832e-02 max/min 2.269204457355e+02
+    7 KSP unpreconditioned resid norm 1.001713886164e-05 true resid norm 1.450804227625e-02 ||r(i)||/||b|| 2.327381060024e-02
+    7 KSP Residual norm 1.001713886164e-05 % max 1.285791493188e+01 min 5.666254244926e-02 max/min 2.269208965234e+02
+    8 KSP unpreconditioned resid norm 1.045057641350e-06 true resid norm 1.383017353522e-02 ||r(i)||/||b|| 2.218637313693e-02
+    8 KSP Residual norm 1.045057641350e-06 % max 1.285829527674e+01 min 5.666064236423e-02 max/min 2.269352188789e+02
+  Linear solve converged due to CONVERGED_RTOL iterations 8
+      Line search: Using full step: fnorm 6.233634244705e-01 gnorm 1.330874176494e-02
+    |residual|_2 of individual variables:
+                  potential: 0.0133087
+
+ 1 Nonlinear |R| = 1.330874e-02
+
+h = .05, dt = 10
+ 0 Nonlinear |R| = 3.485273e+00
+    0 KSP unpreconditioned resid norm 3.485273240218e+00 true resid norm 3.485273240218e+00 ||r(i)||/||b|| 1.000000000000e+00
+    0 KSP Residual norm 3.485273240218e+00 % max 1.000000000000e+00 min 1.000000000000e+00 max/min 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 3.411066372603e+00 true resid norm 3.411066372603e+00 ||r(i)||/||b|| 9.787084505286e-01
+    1 KSP Residual norm 3.411066372603e+00 % max 4.302042325679e+00 min 4.302042325679e+00 max/min 1.000000000000e+00
+    2 KSP unpreconditioned resid norm 1.019511060834e+00 true resid norm 1.019211844756e+00 ||r(i)||/||b|| 2.924338422007e-01
+    2 KSP Residual norm 1.019511060834e+00 % max 4.387670156309e+00 min 1.834817359803e-01 max/min 2.391338916033e+01
+    3 KSP unpreconditioned resid norm 9.135445787215e-02 true resid norm 9.261009656829e-02 ||r(i)||/||b|| 2.657183244620e-02
+    3 KSP Residual norm 9.135445787215e-02 % max 4.388377605805e+00 min 1.736889283692e-01 max/min 2.526573021671e+01
+    4 KSP unpreconditioned resid norm 9.410242848801e-03 true resid norm 1.192180389879e-02 ||r(i)||/||b|| 3.420622452559e-03
+    4 KSP Residual norm 9.410242848801e-03 % max 4.388487439697e+00 min 1.735380239321e-01 max/min 2.528833358972e+01
+    5 KSP unpreconditioned resid norm 6.158872503091e-04 true resid norm 5.113914772719e-03 ||r(i)||/||b|| 1.467292352780e-03
+    5 KSP Residual norm 6.158872503091e-04 % max 4.388833902130e+00 min 1.735323419247e-01 max/min 2.529115814061e+01
+    6 KSP unpreconditioned resid norm 4.125683048570e-05 true resid norm 5.103559871032e-03 ||r(i)||/||b|| 1.464321308338e-03
+    6 KSP Residual norm 4.125683048570e-05 % max 4.388900275474e+00 min 1.735294838547e-01 max/min 2.529195718204e+01
+    7 KSP unpreconditioned resid norm 5.291593437160e-06 true resid norm 5.034838734685e-03 ||r(i)||/||b|| 1.444603733385e-03
+    7 KSP Residual norm 5.291593437160e-06 % max 4.390209653942e+00 min 1.734776325484e-01 max/min 2.530706460222e+01
+  Linear solve converged due to CONVERGED_RTOL iterations 7
+      Line search: Using full step: fnorm 3.485273240218e+00 gnorm 5.286777749286e-03
+    |residual|_2 of individual variables:
+                  potential: 0.00528678
+
+ 1 Nonlinear |R| = 5.286778e-03
+
+h = .05, dt = 1
+ 0 Nonlinear |R| = 1.928002e+01
+    0 KSP unpreconditioned resid norm 1.928002299202e+01 true resid norm 1.928002299202e+01 ||r(i)||/||b|| 1.000000000000e+00
+    0 KSP Residual norm 1.928002299202e+01 % max 1.000000000000e+00 min 1.000000000000e+00 max/min 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.501195750502e+01 true resid norm 1.501195750502e+01 ||r(i)||/||b|| 7.786275727592e-01
+    1 KSP Residual norm 1.501195750502e+01 % max 1.490951317992e+00 min 1.490951317992e+00 max/min 1.000000000000e+00
+    2 KSP unpreconditioned resid norm 8.214128356460e-01 true resid norm 8.216029587267e-01 ||r(i)||/||b|| 4.261421052593e-02
+    2 KSP Residual norm 8.214128356460e-01 % max 1.669252069200e+00 min 5.049013893626e-01 max/min 3.306095218530e+00
+    3 KSP unpreconditioned resid norm 4.946714533380e-02 true resid norm 4.865541106670e-02 ||r(i)||/||b|| 2.523617896454e-03
+    3 KSP Residual norm 4.946714533380e-02 % max 1.669786057563e+00 min 5.032973535462e-01 max/min 3.317692902213e+00
+    4 KSP unpreconditioned resid norm 2.919334775995e-03 true resid norm 3.619462313189e-03 ||r(i)||/||b|| 1.877312239040e-04
+    4 KSP Residual norm 2.919334775995e-03 % max 1.670892671226e+00 min 5.026078528146e-01 max/min 3.324446010679e+00
+    5 KSP unpreconditioned resid norm 1.171107057589e-04 true resid norm 2.417266600423e-03 ||r(i)||/||b|| 1.253767488464e-04
+    5 KSP Residual norm 1.171107057589e-04 % max 1.671131162382e+00 min 5.025577227676e-01 max/min 3.325252178355e+00
+  Linear solve converged due to CONVERGED_RTOL iterations 5
+      Line search: Using full step: fnorm 1.928002299202e+01 gnorm 2.232151562069e-03
+    |residual|_2 of individual variables:
+                  potential: 0.00223215
+
+ 1 Nonlinear |R| = 2.232152e-03
+
+h = .05, dt = .1
+ 0 Nonlinear |R| = 1.028467e+02
+    0 KSP unpreconditioned resid norm 1.028466871259e+02 true resid norm 1.028466871259e+02 ||r(i)||/||b|| 1.000000000000e+00
+    0 KSP Residual norm 1.028466871259e+02 % max 1.000000000000e+00 min 1.000000000000e+00 max/min 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.827037910846e+01 true resid norm 1.827037910846e+01 ||r(i)||/||b|| 1.776467440910e-01
+    1 KSP Residual norm 1.827037910846e+01 % max 9.944447062505e-01 min 9.944447062505e-01 max/min 1.000000000000e+00
+    2 KSP unpreconditioned resid norm 3.974700420275e-01 true resid norm 3.970332708070e-01 ||r(i)||/||b|| 3.860438113296e-03
+    2 KSP Residual norm 3.974700420275e-01 % max 1.054373521860e+00 min 8.667049344528e-01 max/min 1.216531116817e+00
+    3 KSP unpreconditioned resid norm 8.424162168393e-03 true resid norm 8.735224475124e-03 ||r(i)||/||b|| 8.493442734264e-05
+    3 KSP Residual norm 8.424162168393e-03 % max 1.056500933233e+00 min 8.628067988078e-01 max/min 1.224493055332e+00
+    4 KSP unpreconditioned resid norm 1.494087515474e-04 true resid norm 5.023211037557e-04 ||r(i)||/||b|| 4.884173888274e-06
+    4 KSP Residual norm 1.494087515474e-04 % max 1.056513117891e+00 min 8.626251719351e-01 max/min 1.224764999056e+00
+  Linear solve converged due to CONVERGED_RTOL iterations 4
+      Line search: Using full step: fnorm 1.028466871259e+02 gnorm 4.011681697041e-04
+    |residual|_2 of individual variables:
+                  potential: 0.000401168
+
+ 1 Nonlinear |R| = 4.011682e-04
+
+h = .05, dt = .01
+ 0 Nonlinear |R| = 4.933394e+02
+    0 KSP unpreconditioned resid norm 4.933393830700e+02 true resid norm 4.933393830700e+02 ||r(i)||/||b|| 1.000000000000e+00
+    0 KSP Residual norm 4.933393830700e+02 % max 1.000000000000e+00 min 1.000000000000e+00 max/min 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.642657860606e+01 true resid norm 1.642657860606e+01 ||r(i)||/||b|| 3.329671047918e-02
+    1 KSP Residual norm 1.642657860606e+01 % max 9.876947204243e-01 min 9.876947204243e-01 max/min 1.000000000000e+00
+    2 KSP unpreconditioned resid norm 4.485368903029e-01 true resid norm 4.486181492960e-01 ||r(i)||/||b|| 9.093499620976e-04
+    2 KSP Residual norm 4.485368903029e-01 % max 9.940462814408e-01 min 9.201436575439e-01 max/min 1.080316397653e+00
+    3 KSP unpreconditioned resid norm 9.104949798762e-03 true resid norm 8.967250763816e-03 ||r(i)||/||b|| 1.817663675666e-05
+    3 KSP Residual norm 9.104949798762e-03 % max 9.987911020783e-01 min 9.133743829176e-01 max/min 1.093517752149e+00
+    4 KSP unpreconditioned resid norm 1.260918451614e-04 true resid norm 2.558054085775e-04 ||r(i)||/||b|| 5.185181182691e-07
+    4 KSP Residual norm 1.260918451614e-04 % max 1.000406867225e+00 min 9.110163641554e-01 max/min 1.098121731493e+00
+  Linear solve converged due to CONVERGED_RTOL iterations 4
+      Line search: Using full step: fnorm 4.933393830700e+02 gnorm 2.083801676191e-04
+    |residual|_2 of individual variables:
+                  potential: 0.00020838
+
+ 1 Nonlinear |R| = 2.083802e-04
+
+h = .05, dt = .001
+ 0 Nonlinear |R| = 1.773842e+03
+    0 KSP unpreconditioned resid norm 1.773841528311e+03 true resid norm 1.773841528311e+03 ||r(i)||/||b|| 1.000000000000e+00
+    0 KSP Residual norm 1.773841528311e+03 % max 1.000000000000e+00 min 1.000000000000e+00 max/min 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.362685165812e+01 true resid norm 1.362685165812e+01 ||r(i)||/||b|| 7.682113334608e-03
+    1 KSP Residual norm 1.362685165812e+01 % max 9.968904682400e-01 min 9.968904682400e-01 max/min 1.000000000000e+00
+    2 KSP unpreconditioned resid norm 1.363411691300e-01 true resid norm 1.362772801451e-01 ||r(i)||/||b|| 7.682607378959e-05
+    2 KSP Residual norm 1.363411691300e-01 % max 9.994158763718e-01 min 9.710264833812e-01 max/min 1.029236476529e+00
+    3 KSP unpreconditioned resid norm 6.796909201131e-04 true resid norm 8.925158560244e-04 ||r(i)||/||b|| 5.031542230686e-07
+    3 KSP Residual norm 6.796909201131e-04 % max 9.998650545169e-01 min 9.605771610787e-01 max/min 1.040900299351e+00
+  Linear solve converged due to CONVERGED_RTOL iterations 3
+      Line search: Using full step: fnorm 1.773841528311e+03 gnorm 8.872656183974e-04
+    |residual|_2 of individual variables:
+                  potential: 0.000887266
+
+ 1 Nonlinear |R| = 8.872656e-04
+
+h = .05, dt = 1e-4
+ 0 Nonlinear |R| = 3.504529e+03
+    0 KSP unpreconditioned resid norm 3.504528942674e+03 true resid norm 3.504528942674e+03 ||r(i)||/||b|| 1.000000000000e+00
+    0 KSP Residual norm 3.504528942674e+03 % max 1.000000000000e+00 min 1.000000000000e+00 max/min 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 3.815073345721e+01 true resid norm 3.815073345721e+01 ||r(i)||/||b|| 1.088612309422e-02
+    1 KSP Residual norm 3.815073345721e+01 % max 9.898843692129e-01 min 9.898843692129e-01 max/min 1.000000000000e+00
+    2 KSP unpreconditioned resid norm 3.415607223931e-01 true resid norm 3.415685009317e-01 ||r(i)||/||b|| 9.746488230488e-05
+    2 KSP Residual norm 3.415607223931e-01 % max 9.986383243515e-01 min 9.787991006767e-01 max/min 1.020268943505e+00
+    3 KSP unpreconditioned resid norm 1.003061571183e-03 true resid norm 1.082585661617e-03 ||r(i)||/||b|| 3.089104639526e-07
+    3 KSP Residual norm 1.003061571183e-03 % max 9.999214765593e-01 min 9.687189057860e-01 max/min 1.032210139171e+00
+  Linear solve converged due to CONVERGED_RTOL iterations 3
+      Line search: Using full step: fnorm 3.504528942674e+03 gnorm 1.042671052763e-03
+    |residual|_2 of individual variables:
+                  potential: 0.00104267
+
+ 1 Nonlinear |R| = 1.042671e-03
+
+h = .05, dt = 1e-5
+ 0 Nonlinear |R| = 4.087688e+03
+    0 KSP unpreconditioned resid norm 4.087687928606e+03 true resid norm 4.087687928606e+03 ||r(i)||/||b|| 1.000000000000e+00
+    0 KSP Residual norm 4.087687928606e+03 % max 1.000000000000e+00 min 1.000000000000e+00 max/min 1.000000000000e+00
+    1 KSP unpreconditioned resid norm 1.002964948858e+02 true resid norm 1.002964948858e+02 ||r(i)||/||b|| 2.453624069096e-02
+    1 KSP Residual norm 1.002964948858e+02 % max 9.833720656738e-01 min 9.833720656738e-01 max/min 1.000000000000e+00
+    2 KSP unpreconditioned resid norm 2.558637581460e+00 true resid norm 2.558671805504e+00 ||r(i)||/||b|| 6.259459748867e-04
+    2 KSP Residual norm 2.558637581460e+00 % max 9.957345640558e-01 min 9.500398298468e-01 max/min 1.048097703668e+00
+    3 KSP unpreconditioned resid norm 2.932580896138e-02 true resid norm 2.934446149590e-02 ||r(i)||/||b|| 7.178743095954e-06
+    3 KSP Residual norm 2.932580896138e-02 % max 9.997654351205e-01 min 9.349428929475e-01 max/min 1.069333156776e+00
+  Linear solve converged due to CONVERGED_RTOL iterations 3
+      Line search: Using full step: fnorm 4.087687928606e+03 gnorm 2.933907024986e-02
+    |residual|_2 of individual variables:
+                  potential: 0.0293391
+
+ 1 Nonlinear |R| = 2.933907e-02
+
+To summarize:
+h = .05, `-pc_type amg`, SMP preconditioner, converged norms:
+
+dt = 1e2:  8 KSP unpreconditioned resid norm 1.045057641350e-06 true resid norm 1.383017353522e-02 ||r(i)||/||b|| 2.218637313693e-02
+dt = 1e1:  7 KSP unpreconditioned resid norm 5.291593437160e-06 true resid norm 5.034838734685e-03 ||r(i)||/||b|| 1.444603733385e-03
+dt = 1e0:  5 KSP unpreconditioned resid norm 1.171107057589e-04 true resid norm 2.417266600423e-03 ||r(i)||/||b|| 1.253767488464e-04
+dt = 1e-1: 4 KSP unpreconditioned resid norm 1.494087515474e-04 true resid norm 5.023211037557e-04 ||r(i)||/||b|| 4.884173888274e-06
+dt = 1e-2: 4 KSP unpreconditioned resid norm 1.260918451614e-04 true resid norm 2.558054085775e-04 ||r(i)||/||b|| 5.185181182691e-07
+dt = 1e-3: 3 KSP unpreconditioned resid norm 6.796909201131e-04 true resid norm 8.925158560244e-04 ||r(i)||/||b|| 5.031542230686e-07
+dt = 1e-4: 3 KSP unpreconditioned resid norm 1.003061571183e-03 true resid norm 1.082585661617e-03 ||r(i)||/||b|| 3.089104639526e-07
+dt = 1e-5: 3 KSP unpreconditioned resid norm 2.932580896138e-02 true resid norm 2.934446149590e-02 ||r(i)||/||b|| 7.178743095954e-06
+
+Analagous qualitative trends with `-pc_type lu` although one has to go to larger time steps in order to be able to see it.

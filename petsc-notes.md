@@ -19,3 +19,10 @@ Ok, the function I set will be called with these arguments:
 (*ctx->func)(ctx->funcctx,U,F)
 
 The function context is set with the last argument to `MatMFFDSetFunction`. For us this should be the PetscNonlinearSolver.
+
+# 5/17/17
+
+ksp: krylov-subspace projection
+
+symmetric, positive, definite: CG (conjugate gradient)
+otherwise: GMRES

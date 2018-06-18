@@ -7720,3 +7720,60 @@ lm = 0.20754716981132079
 nodal_area = 0.5
 normal(component) = 0.99999999999999955
 test_master = 0.045454571959054939
+
+Important notes: The current lagrange multiplier formulation (e.g. residual statements) seems to really challenge a direct solver. Running with the `frictionless_lagrange` sliding block problem with `-snes_type fd` and NEWTON, `-pc_type lu` fails to solve. However, `-pc_type ilu` works very well. Additionally, line searches also do not work with high youngs modulus values. Ok this is weird...the problem converges marvelously with a Youngs modulus of 1e8. It also converges fairly well with Youngs modulus of 1e12. With `-snes_type fd -snes_mf_operator` the solve fails. So it looks like PJFNK with the lagrange multiplier formulation *may* struggle. `-pc_type lu -pc_factor_mat_solver_package mumps` actually works very well for a youngs modulus of 1e5 but fails for 1e6.
+
+(MooseVariableFE<double>) $15 = {
+  MooseVariableFEBase = {
+    MooseVariableBase = {
+      _var_num = 0
+      _fe_type = {
+        order = (_order = 2)
+        family = LAGRANGE
+      }
+      _index = 0
+      _var_kind = VAR_NONLINEAR
+      _subproblem = 0x0000000113848218
+      _sys = 0x0000000113876c18
+      _variable = 0x00000001141ef920
+      _dof_map = 0x0000000114142460
+      _dof_indices = size=0 {}
+      _mesh = 0x0000000113800018
+      _scaling_factor = 1
+    }
+  }
+
+# 6/15/18
+
+Errors:
+nx = 20
++----------------+----------------+----------------+----------------+----------------+
+| time           | my_u1          | my_u2          | yaqi_u1        | yaqi_u2        |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+00 |   4.992761e-02 |   5.548607e-02 |   2.144726e-03 |   8.211431e-03 |
++----------------+----------------+----------------+----------------+----------------+
+
+nx = 40
++----------------+----------------+----------------+----------------+----------------+
+| time           | my_u1          | my_u2          | yaqi_u1        | yaqi_u2        |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+00 |   2.450870e-02 |   2.588145e-02 |   5.830046e-04 |   1.962396e-03 |
++----------------+----------------+----------------+----------------+----------------+
+
+nx = 80
++----------------+----------------+----------------+----------------+----------------+
+| time           | my_u1          | my_u2          | yaqi_u1        | yaqi_u2        |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+00 |   1.214107e-02 |   1.248190e-02 |   1.945367e-04 |   4.048233e-04 |
++----------------+----------------+----------------+----------------+----------------+
+
+nx = 160
++----------------+----------------+----------------+----------------+----------------+
+| time           | my_u1          | my_u2          | yaqi_u1        | yaqi_u2        |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+00 |   6.042278e-03 |   6.127175e-03 |   1.000789e-04 |   7.100799e-05 |
++----------------+----------------+----------------+----------------+----------------+

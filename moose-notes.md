@@ -1,14 +1,3 @@
-MOOSE directory of directories:
-projects: petsc debug stack, HEAD (e.g. uses a debug build of petsc, so
-everything might as well be debug)
-projects3: petsc opt stack, HEAD (so we can use opt and debug for moose/libmesh)
-
-projects-dbg: petsc debug stack, feature (e.g. uses a debug build of petsc, so
-everything might as well be debug)
-projects4: petsc opt stack, feature (so we can use opt and debug for moose/libmesh)
-projects2: petsc opt stack, feature (so we can use opt and debug for moose/libmesh)
-
-
 Print position in vector in LLDB:
 ```
 p elem_num_map.__begin_[8297]
@@ -33,12 +22,162 @@ etags moose:
 
 find . \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -iname "*.h" -o -iname "*.C" \) -print | etags -
 
+clang++ -std=c++11 -g -O0 -Iinclude -I$PETSC_DIR/include -o export_discontinuous libmesh_export_discotinuous_error.cxx exact_solution.C -Llib -Wl,-rpath -Wl,lib -lmesh_dbg
+
 icecream:
 
 ssh -Y icecream.inl.gov && icemon &
 
 Textbook that I need to order: "Nonlinear Systems and Optimization for the
 Chemical Engineer"
+
+Action order list:
+  [0] = "no_action"
+  [1] = "setup_oversampling"
+  [2] = "deprecated_block"
+  [3] = "finish_input_file_output"
+  [4] = "meta_action"
+  [5] = "dynamic_object_registration"
+  [6] = "common_output"
+  [7] = "set_global_params"
+  [8] = "setup_recover_file_base"
+  [9] = "check_copy_nodal_vars"
+  [10] = "setup_mesh"
+  [11] = "add_partitioner"
+  [12] = "add_geometric_rm"
+  [13] = "init_mesh"
+  [14] = "prepare_mesh"
+  [15] = "add_mesh_modifier"
+  [16] = "execute_mesh_modifiers"
+  [17] = "add_mortar_interface"
+  [18] = "uniform_refine_mesh"
+  [19] = "setup_mesh_complete"
+  [20] = "determine_system_type"
+  [21] = "create_problem"
+  [22] = "setup_postprocessor_data"
+  [23] = "setup_time_integrator"
+  [24] = "setup_executioner"
+  [25] = "check_integrity_early"
+  [26] = "setup_predictor"
+  [27] = "init_displaced_problem"
+  [28] = "add_elemental_field_variable"
+  [29] = "add_aux_variable"
+  [30] = "add_external_aux_variables"
+  [31] = "add_variable"
+  [32] = "setup_variable_complete"
+  [33] = "setup_quadrature"
+  [34] = "add_function"
+  [35] = "add_distribution"
+  [36] = "add_sampler"
+  [37] = "add_periodic_bc"
+  [38] = "add_user_object"
+  [39] = "setup_function_complete"
+  [40] = "setup_adaptivity"
+  [41] = "set_adaptivity_options"
+  [42] = "add_ic"
+  [43] = "add_constraint"
+  [44] = "add_field_split"
+  [45] = "add_preconditioning"
+  [46] = "setup_time_stepper"
+  [47] = "ready_to_init"
+  [48] = "setup_dampers"
+  [49] = "setup_residual_debug"
+  [50] = "add_bounds_vectors"
+  [51] = "add_multi_app"
+  [52] = "add_transfer"
+  [53] = "copy_nodal_vars"
+  [54] = "copy_nodal_aux_vars"
+  [55] = "add_material"
+  [56] = "setup_material_output"
+  [57] = "add_algebraic_rm"
+  [58] = "init_problem"
+  [59] = "setup_debug"
+  [60] = "add_output"
+  [61] = "add_postprocessor"
+  [62] = "add_vector_postprocessor"
+  [63] = "add_kernel"
+  [64] = "add_nodal_kernel"
+  [65] = "add_bc"
+  [66] = "add_aux_kernel"
+  [67] = "add_scalar_kernel"
+  [68] = "add_aux_scalar_kernel"
+  [69] = "add_dirac_kernel"
+  [70] = "add_dg_kernel"
+  [71] = "add_interface_kernel"
+  [72] = "add_damper"
+  [73] = "add_indicator"
+  [74] = "add_marker"
+  [75] = "add_control"
+  [76] = "check_output"
+  [77] = "check_integrity"
+
+Problem/System/Assembly notes, e.g. how MOOSE actually puts together the
+residuals/Jacobians:
+
+- Assembly::prepare: resizes (based on dofIndices) and zeros the local residual
+  and Jacobian blocks
+- Assembly::prepareNeighbor: resizes (based on dofIndicesNeighbor) and zeros the local residual
+  and Jacobian blocks
+- Assembly::reinitNeighborAtPhysical: calls:
+  - Assembly::reinitFEFaceNeighbor(neighbor_side_elem, ref_points)
+  - Assembly::reinitNeighbor(neighbor_side_elem, ref_points)
+  - Assembly::reinitFEFaceNeighbor(neighbor_elem, ref_points)
+  - Assembly::reinitNeighbor(neighbor_elem, ref_points)
+- Assembly::reinitFE(elem): does shape function initialization
+- Assembly::reinitFEFaceNeighbor(elem, ref_points): does shape function initialization (for proper elem->dim)
+- Assembly::reinit(elem): sets the _current_elem member, sets up quadrature, and calls reinitFE(elem)
+- Assembly::reinitNeighbor(elem, ref_points): sets the _current_neighbor_elem member and sets up quadrature
+
+
+- FEProblemBase::reinitNeighborPhys: calls:
+  - Assembly::reinitNeighborAtPhysical
+  - *System*::prepareNeighbor
+  - Assembly::prepareNeighbor
+  - *System*::reinitNeighborFace
+- FEProblemBase::reinitNodeFace(slave_node, slave_boundary): calls:
+  - Assembly::reinit(slave_node)
+  - *System*::reinitNodeFace(slave_node, slave_boundary)
+
+- *System*::prepareNeighbor: calls
+  - MooseVariable::prepareNeighbor
+- *System*::reinitNeighborFace: calls:
+  - MooseVariable::computeNeighborValuesFace
+- *System*::reinitNodeFace: calls:
+  - MooseVariable::reinitNode
+  - MooseVariable::compouteNodalValues
+
+- MooseVariable::computeNodalValues: computes variable values
+- MooseVariable::computeNeighborValuesFace: computes variable values
+- MooseVariable::prepareNeighbor: sets neighbor dof indices based on current neighbor element
+- MooseVariable::reinitNode: sets dof indices based on current node
+
+In summary, proper computing order (generally):
+- Assembly::reinit: sets up shape functions, quadrature, and sets problem _elem, _node, _neighbor data
+- *System*::prepare: sets up dof indices through calls to MooseVariable
+- Assembly::prepare: resizes local residuals and Jacobians
+- *System*::reinit: computes variable values through calls to MooseVariable
+
+Note that:
+- FEProblemBase::prepare calls (generally):
+  - Assembly::reinit
+  - *System*::prepare
+  - Assembly::prepare
+- FEProblemBase::reinit calls:
+  - *System*::reinit
+
+FE::reinit in libMesh summary of steps:
+1. this->_fe_map->template init_reference_to_physical_map
+2. this->init_shape_functions:
+     This calculates the reference phi and grad_phi values, e.g. things like dphidxi
+3. this->_fe_map->compute_map
+4. this->compute_shape_functions
+     This calculates the physical phi and grad_phi values, e.g. things like
+     dphidx
+
+AFAICT in MOOSE, we use a JxW based on first order Lagrange shape functions in
+all our compute object calculations even though if we have second order elements
+the mapping of shpae functions will be done using second order Lagrange shape
+functions.
 
 # 9/6/17
 
@@ -8311,3 +8450,1117 @@ We absolutely have to have the absolute value sign on the tangential LM variable
 MechanicalContactConstraint when the tangential velocity is non-zero. E.g. we have to strongly enforce
 the fact that the force is in the opposite direction of the slip velocity, otherwise slipping will occur
 no matter what.
+
+Correct Jacobian:
+
+row 17: (16, 0.0915653)  (17, -0.91566)  (32, -1.99644)
+
+Hand-coded:
+
+row 17: (16, 0.0915653)  (17, 0.)  (32, -1.99644)
+
+# 6/26/18
+
+LM: num_steps = 30, total nonlinear iterations = 59, total simulation time = 25.3 seconds
+Penalty: num_steps = 31, total nonlinear iterations = 89, total simulation time = 50.5 seconds
+
+# 6/28/18
+
+address of material data that (first) StatefulMaterial uses = 0x000000010e28f398
+
+We have:
+
+```
+_material_data = 0x000000010e200018
+_bnd_material_data = 0x000000010e300018
+_neighbor_material_data = 0x000000010e400018
+```
+
+- StatefulMaterial adds diffusivity to _bnd_material_data
+- The "general" GenericConstantMaterial adds its single property to _material_data (for volume), then
+to _bnd_material_data (for face...hmm), then to _neighbor_material_data (for neighbor)
+- The "boundary" GenericConstantMaterial add its two properties to
+_bnd_material_data
+
+There are two MaterialPropertyStorage objects, `_material_props` and
+`_bnd_material_props`. `_material_data` is initialized with `_material_props`
+while the other two material data objects are intialized with
+`_bnd_material_props`.
+
+(MaterialPropertyStorage *) $3 = 0x000000010ce45890 (this is the address for the
+boundary)
+"diffusivity", 0
+
+0x000000010ce456d0 this is address for non-boundary MaterialPropertyStorage
+
+So `_prop_ids` in `MaterialPropertyStorage` is static so that explains the
+nullptr in the volume material
+
+The problem is with `_stateful_prop_id_to_prop_id` in `MaterialPropertyStorage`
+
+`_prop_ids` is static, but `_stateful_prop_id_to_prop_id` is not.
+
+Ok lets now add a volume stateful material.
+
+_props_ids:
+"diffusivity", 0
+"diffusivity2", 1
+"dummy", 2
+"D", 3
+"D_neighbor", 4
+
+_bnd_material_props (MaterialPropertyStorage): _stateful_prop_id_to_prop_id
+[0] : 0
+[1] : 1
+
+_material_props (MaterialPropertyStorage): _stateful_prop_id_to_prop_id
+[0] : 1
+
+_material_data (uses _material_props)
+[0] : "diffusivity" : null
+[1] : "diffusivity2" : non-null
+[2] : "dummy" : non-null
+
+_bnd_material_data (uses _bnd_material_props)
+[0] : "diffusivity" : non-null
+[1] : "diffusivity2" : non-null
+[2] : "dummy" : non-null
+[3] : "D" : non-null
+[4] : "D_neighbor" : non-null
+
+_neighbor_material_data (uses _bnd_material_props)
+[0] : "diffusivity" : null
+[1] : "diffusivity2" : non-null
+[2] : "dummy" : non-null
+
+
+Without the volume stateful material:
+
+static MaterialPropertyStorage member _props_ids:
+"diffusivity", 0
+"dummy", 1
+"D", 2
+"D_neighbor", 3
+
+_bnd_material_props (MaterialPropertyStorage): _stateful_prop_id_to_prop_id
+[0] : 0
+
+_material_props (MaterialPropertyStorage): _stateful_prop_id_to_prop_id
+Empty
+
+_material_data (uses _material_props)
+[0] : "diffusivity" : null
+[1] : "dummy" : non-null
+
+_bnd_material_data (uses _bnd_material_props)
+[0] : "diffusivity" : non-null
+[1] : "dummy" : non-null
+[2] : "D" : non-null
+[3] : "D_neighbor" : non-null
+
+_neighbor_material_data (uses _bnd_material_props)
+[0] : "diffusivity" : null
+[1] : "dummy" : non-null
+
+ 0 Nonlinear |R| = 2.185303e+00
+  ---------- Testing Jacobian -------------
+  Testing hand-coded Jacobian, if (for double precision runs) ||J - Jfd||_F/||J||_F is
+    O(1.e-8), the hand-coded Jacobian is probably correct.
+  ||J - Jfd||_F/||J||_F = 9.71572e-09, ||J - Jfd||_F = 1.55451e-07
+  Hand-coded Jacobian ----------
+Mat Object: () 1 MPI processes
+  type: seqaij
+row 0: (0, 0.)  (1, 0.)  (2, 0.)  (3, -4.)  (4, 0.)  (5, 0.)  (6, 0.)  (7, 4.)
+row 1: (0, 0.)  (1, 0.)  (2, -4.)  (3, -8.)  (4, 0.)  (5, 0.)  (6, 4.)  (7, 0.)
+row 2:
+row 3:
+row 4: (0, 0.)  (1, 0.)  (2, 0.)  (3, 4.)  (4, 0.)  (5, 0.)  (6, 0.)  (7, -4.)
+row 5: (0, 0.)  (1, 0.)  (2, 4.)  (3, 8.)  (4, 0.)  (5, 0.)  (6, -4.)  (7, 0.)
+row 6:
+row 7:
+  Finite difference Jacobian ----------
+Mat Object: 1 MPI processes
+
+New Petsc:
+  * frame #0: 0x0000000101d20e70 libmoose-dbg.0.dylib`NonlinearSystemBase::computeResidualTags(this=0x000000010f005618, tags=size=2) at NonlinearSystemBase.C:542
+    frame #1: 0x00000001019fad87 libmoose-dbg.0.dylib`FEProblemBase::computeResidualTags(this=0x000000010f002018, tags=size=2) at FEProblemBase.C:4227
+    frame #2: 0x00000001019f9cb1 libmoose-dbg.0.dylib`FEProblemBase::computeResidualInternal(this=0x000000010f002018, soln=0x000000010e56f2e0, residual=0x00007fff5fbfec00, tags=size=2) at FEProblemBase.C:4109
+    frame #3: 0x00000001019f96ff libmoose-dbg.0.dylib`FEProblemBase::computeResidual(this=0x000000010f002018, soln=0x000000010e56f2e0, residual=0x00007fff5fbfec00) at FEProblemBase.C:4066
+    frame #4: 0x00000001019f90a6 libmoose-dbg.0.dylib`FEProblemBase::computeResidualSys(this=0x000000010f002018, (null)=0x000000010e56ecf0, soln=0x000000010e56f2e0, residual=0x00007fff5fbfec00) at FEProblemBase.C:4043
+    frame #5: 0x0000000101cfde59 libmoose-dbg.0.dylib`ComputeResidualFunctor::residual(this=0x000000010f006688, soln=0x000000010e56f2e0, residual=0x00007fff5fbfec00, sys=0x000000010e56ecf0) at ComputeResidualFunctor.C:23
+    frame #6: 0x00000001058356f2 libmesh_dbg.0.dylib`::libmesh_petsc_snes_residual(snes=0x000000010f022c20, x=0x000000010f00be20, r=0x000000010f00e620, ctx=0x000000010e56fa20) at petsc_nonlinear_solver.C:173
+    frame #7: 0x000000010b47189f libpetsc.3.09.dylib`SNESComputeFunction(snes=0x000000010f022c20, x=0x000000010f00be20, y=0x000000010f00e620) at snes.c:2209 [opt]
+    frame #8: 0x000000010b4a606d libpetsc.3.09.dylib`SNESSolve_KSPONLY(snes=0x000000010f022c20) at ksponly.c:23 [opt]
+    frame #9: 0x000000010b478650 libpetsc.3.09.dylib`SNESSolve(snes=0x000000010f022c20, b=0x0000000000000000, x=0x000000010f00be20) at snes.c:4348 [opt]
+    frame #10: 0x0000000105833acd libmesh_dbg.0.dylib`libMesh::PetscNonlinearSolver<double>::solve(this=0x000000010e56fa20, pre_in=0x000000010e56f950, x_in=0x000000010e56f1c0, r_in=0x000000010e56f770, (null)=0.00000001, (null)=10000) at petsc_nonlinear_solver.C:934
+    frame #11: 0x000000010595e809 libmesh_dbg.0.dylib`libMesh::NonlinearImplicitSystem::solve(this=0x000000010e56ecf0) at nonlinear_implicit_system.C:181
+    frame #12: 0x0000000101d07ab8 libmoose-dbg.0.dylib`NonlinearSystem::solve(this=0x000000010f005618) at NonlinearSystem.C:191
+    frame #13: 0x00000001019f4ee2 libmoose-dbg.0.dylib`FEProblemBase::solve(this=0x000000010f002018) at FEProblemBase.C:3827
+    frame #14: 0x0000000100f7ea0e libmoose-dbg.0.dylib`Steady::execute(this=0x000000010e580938) at Steady.C:84
+    frame #15: 0x000000010219b823 libmoose-dbg.0.dylib`MooseApp::executeExecutioner(this=0x000000010e80a018) at MooseApp.C:801
+    frame #16: 0x000000010219c01b libmoose-dbg.0.dylib`MooseApp::run(this=0x000000010e80a018) at MooseApp.C:904
+    frame #17: 0x0000000100002373 moose_test-dbg`main(argc=3, argv=0x00007fff5fbff850) at main.C:31
+    frame #18: 0x00007fffb5456235 libdyld.dylib`start + 1
+
+Old Petsc:
+  * frame #0: 0x0000000101d25600 libmoose-dbg.0.dylib`NonlinearSystemBase::computeResidualTags(this=0x000000010f005618, tags=size=2) at NonlinearSystemBase.C:542
+    frame #1: 0x00000001019f9ba7 libmoose-dbg.0.dylib`FEProblemBase::computeResidualTags(this=0x000000010f002018, tags=size=2) at FEProblemBase.C:4227
+    frame #2: 0x00000001019f8ad1 libmoose-dbg.0.dylib`FEProblemBase::computeResidualInternal(this=0x000000010f002018, soln=0x000000010e26f2d0, residual=0x00007fff5fbfec20, tags=size=2) at FEProblemBase.C:4109
+    frame #3: 0x00000001019f851f libmoose-dbg.0.dylib`FEProblemBase::computeResidual(this=0x000000010f002018, soln=0x000000010e26f2d0, residual=0x00007fff5fbfec20) at FEProblemBase.C:4066
+    frame #4: 0x00000001019f7ec6 libmoose-dbg.0.dylib`FEProblemBase::computeResidualSys(this=0x000000010f002018, (null)=0x000000010e26ece0, soln=0x000000010e26f2d0, residual=0x00007fff5fbfec20) at FEProblemBase.C:4043
+    frame #5: 0x0000000101cfdca9 libmoose-dbg.0.dylib`ComputeResidualFunctor::residual(this=0x000000010f006688, soln=0x000000010e26f2d0, residual=0x00007fff5fbfec20, sys=0x000000010e26ece0) at ComputeResidualFunctor.C:23
+    frame #6: 0x00000001056e4fe2 libmesh_dbg.0.dylib`::libmesh_petsc_snes_residual(snes=0x000000010f800e20, x=0x000000010f00b820, r=0x000000010f00d620, ctx=0x000000010e26fa10) at petsc_nonlinear_solver.C:173
+    frame #7: 0x000000010b72302f libpetsc.3.7.dylib`SNESComputeFunction(snes=0x000000010f800e20, x=0x000000010f00b820, y=0x000000010f00d620) at snes.c:2145 [opt]
+    frame #8: 0x000000010b754f3d libpetsc.3.7.dylib`SNESSolve_KSPONLY(snes=0x000000010f800e20) at ksponly.c:25 [opt]
+    frame #9: 0x000000010b72828a libpetsc.3.7.dylib`SNESSolve(snes=0x000000010f800e20, b=<unavailable>, x=0x000000010f00b820) at snes.c:4005 [opt]
+    frame #10: 0x00000001056e33c7 libmesh_dbg.0.dylib`libMesh::PetscNonlinearSolver<double>::solve(this=0x000000010e26fa10, pre_in=0x000000010e26f940, x_in=0x000000010e26f1b0, r_in=0x000000010e26f760, (null)=0.00000001, (null)=10000) at petsc_nonlinear_solver.C:930
+    frame #11: 0x000000010581ef59 libmesh_dbg.0.dylib`libMesh::NonlinearImplicitSystem::solve(this=0x000000010e26ece0) at nonlinear_implicit_system.C:181
+    frame #12: 0x0000000101d0d0b8 libmoose-dbg.0.dylib`NonlinearSystem::solve(this=0x000000010f005618) at NonlinearSystem.C:191
+    frame #13: 0x00000001019f3d02 libmoose-dbg.0.dylib`FEProblemBase::solve(this=0x000000010f002018) at FEProblemBase.C:3827
+    frame #14: 0x0000000100f7d5ce libmoose-dbg.0.dylib`Steady::execute(this=0x000000010e280928) at Steady.C:84
+    frame #15: 0x00000001021a6253 libmoose-dbg.0.dylib`MooseApp::executeExecutioner(this=0x000000010e809a18) at MooseApp.C:801
+    frame #16: 0x00000001021a6a4b libmoose-dbg.0.dylib`MooseApp::run(this=0x000000010e809a18) at MooseApp.C:904
+    frame #17: 0x0000000100001b63 moose_test-dbg`main(argc=3, argv=0x00007fff5fbff850) at main.C:31
+    frame #18: 0x00007fffb5456235 libdyld.dylib`start + 1
+
+  * frame #0: 0x0000000101d25600 libmoose-dbg.0.dylib`NonlinearSystemBase::computeResidualTags(this=0x000000010f005618, tags=size=2) at NonlinearSystemBase.C:542
+    frame #1: 0x00000001019f9ba7 libmoose-dbg.0.dylib`FEProblemBase::computeResidualTags(this=0x000000010f002018, tags=size=2) at FEProblemBase.C:4227
+    frame #2: 0x00000001019f8ad1 libmoose-dbg.0.dylib`FEProblemBase::computeResidualInternal(this=0x000000010f002018, soln=0x000000010e26f2d0, residual=0x00007fff5fbfec20, tags=size=2) at FEProblemBase.C:4109
+    frame #3: 0x00000001019f851f libmoose-dbg.0.dylib`FEProblemBase::computeResidual(this=0x000000010f002018, soln=0x000000010e26f2d0, residual=0x00007fff5fbfec20) at FEProblemBase.C:4066
+    frame #4: 0x00000001019f7ec6 libmoose-dbg.0.dylib`FEProblemBase::computeResidualSys(this=0x000000010f002018, (null)=0x000000010e26ece0, soln=0x000000010e26f2d0, residual=0x00007fff5fbfec20) at FEProblemBase.C:4043
+    frame #5: 0x0000000101cfdca9 libmoose-dbg.0.dylib`ComputeResidualFunctor::residual(this=0x000000010f006688, soln=0x000000010e26f2d0, residual=0x00007fff5fbfec20, sys=0x000000010e26ece0) at ComputeResidualFunctor.C:23
+    frame #6: 0x00000001056e4fe2 libmesh_dbg.0.dylib`::libmesh_petsc_snes_residual(snes=0x000000010f800e20, x=0x000000010f00b820, r=0x000000010f00d620, ctx=0x000000010e26fa10) at petsc_nonlinear_solver.C:173
+    frame #7: 0x000000010b72302f libpetsc.3.7.dylib`SNESComputeFunction(snes=0x000000010f800e20, x=0x000000010f00b820, y=0x000000010f00d620) at snes.c:2145 [opt]
+    frame #8: 0x000000010b7550c7 libpetsc.3.7.dylib`SNESSolve_KSPONLY(snes=0x000000010f800e20) at ksponly.c:51 [opt]
+    frame #9: 0x000000010b72828a libpetsc.3.7.dylib`SNESSolve(snes=0x000000010f800e20, b=<unavailable>, x=0x000000010f00b820) at snes.c:4005 [opt]
+    frame #10: 0x00000001056e33c7 libmesh_dbg.0.dylib`libMesh::PetscNonlinearSolver<double>::solve(this=0x000000010e26fa10, pre_in=0x000000010e26f940, x_in=0x000000010e26f1b0, r_in=0x000000010e26f760, (null)=0.00000001, (null)=10000) at petsc_nonlinear_solver.C:930
+    frame #11: 0x000000010581ef59 libmesh_dbg.0.dylib`libMesh::NonlinearImplicitSystem::solve(this=0x000000010e26ece0) at nonlinear_implicit_system.C:181
+    frame #12: 0x0000000101d0d0b8 libmoose-dbg.0.dylib`NonlinearSystem::solve(this=0x000000010f005618) at NonlinearSystem.C:191
+    frame #13: 0x00000001019f3d02 libmoose-dbg.0.dylib`FEProblemBase::solve(this=0x000000010f002018) at FEProblemBase.C:3827
+    frame #14: 0x0000000100f7d5ce libmoose-dbg.0.dylib`Steady::execute(this=0x000000010e280928) at Steady.C:84
+    frame #15: 0x00000001021a6253 libmoose-dbg.0.dylib`MooseApp::executeExecutioner(this=0x000000010e809a18) at MooseApp.C:801
+    frame #16: 0x00000001021a6a4b libmoose-dbg.0.dylib`MooseApp::run(this=0x000000010e809a18) at MooseApp.C:904
+    frame #17: 0x0000000100001b63 moose_test-dbg`main(argc=3, argv=0x00007fff5fbff850) at main.C:31
+    frame #18: 0x00007fffb5456235 libdyld.dylib`start + 1
+
+# 7/2/18
+
+With FD:
++----------------+----------------+----------------+
+| time           | cumulative     | num_nl         |
++----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+01 |   6.000000e+00 |   6.000000e+00 |
+|   1.500000e+01 |   1.200000e+01 |   6.000000e+00 |
+|   2.500000e+01 |   1.900000e+01 |   7.000000e+00 |
+|   3.500000e+01 |   2.100000e+01 |   2.000000e+00 |
+|   4.500000e+01 |   2.300000e+01 |   2.000000e+00 |
+|   5.500000e+01 |   2.500000e+01 |   2.000000e+00 |
+|   6.500000e+01 |   2.700000e+01 |   2.000000e+00 |
+|   7.500000e+01 |   2.900000e+01 |   2.000000e+00 |
+|   8.500000e+01 |   3.100000e+01 |   2.000000e+00 |
+|   9.500000e+01 |   3.300000e+01 |   2.000000e+00 |
+|   1.000000e+02 |   3.500000e+01 |   2.000000e+00 |
++----------------+----------------+----------------+
+
+With NEWTON:
++----------------+----------------+----------------+
+| time           | cumulative     | num_nl         |
++----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+01 |   6.000000e+00 |   6.000000e+00 |
+|   2.000000e+01 |   1.400000e+01 |   8.000000e+00 |
+|   3.000000e+01 |   1.600000e+01 |   2.000000e+00 |
+|   4.000000e+01 |   1.800000e+01 |   2.000000e+00 |
+|   5.000000e+01 |   2.000000e+01 |   2.000000e+00 |
+|   6.000000e+01 |   2.200000e+01 |   2.000000e+00 |
+|   7.000000e+01 |   2.400000e+01 |   2.000000e+00 |
+|   8.000000e+01 |   2.600000e+01 |   2.000000e+00 |
+|   9.000000e+01 |   2.800000e+01 |   2.000000e+00 |
+|   1.000000e+02 |   3.000000e+01 |   2.000000e+00 |
++----------------+----------------+----------------+
+
+With PJFNK:
++----------------+----------------+----------------+
+| time           | cumulative     | num_nl         |
++----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+01 |   6.000000e+00 |   6.000000e+00 |
+|   2.000000e+01 |   1.400000e+01 |   8.000000e+00 |
+|   3.000000e+01 |   1.600000e+01 |   2.000000e+00 |
+|   4.000000e+01 |   1.800000e+01 |   2.000000e+00 |
+|   5.000000e+01 |   2.000000e+01 |   2.000000e+00 |
+|   6.000000e+01 |   2.200000e+01 |   2.000000e+00 |
+|   7.000000e+01 |   2.400000e+01 |   2.000000e+00 |
+|   8.000000e+01 |   2.600000e+01 |   2.000000e+00 |
+|   9.000000e+01 |   2.800000e+01 |   2.000000e+00 |
+|   1.000000e+02 |   3.000000e+01 |   2.000000e+00 |
++----------------+----------------+----------------+
+
+# 7/3/18
+
+With small two-block problem:
+Omitting normals and perturbations from pmat:
+PJFNK:
++----------------+----------------+----------------+----------------+----------------+
+| time           | linear_its     | nl_its         | total_linear   | total_nl       |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+00 |   9.000000e+00 |   6.000000e+00 |   9.000000e+00 |   6.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+
+NEWTON:
++----------------+----------------+----------------+----------------+----------------+
+| time           | linear_its     | nl_its         | total_linear   | total_nl       |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+00 |   8.000000e+00 |   8.000000e+00 |   8.000000e+00 |   8.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+
+
+With normals and perturbations in pmat:
+PJFNK
++----------------+----------------+----------------+----------------+----------------+
+| time           | linear_its     | nl_its         | total_linear   | total_nl       |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+00 |   1.100000e+01 |   6.000000e+00 |   1.100000e+01 |   6.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+
+NEWTON
++----------------+----------------+----------------+----------------+----------------+
+| time           | linear_its     | nl_its         | total_linear   | total_nl       |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+00 |   8.000000e+00 |   8.000000e+00 |   8.000000e+00 |   8.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+
+
+With sliding block problem:
+Omitting normals and perturbations from pmat:
+PJFNK:
+timesteps = 33
++----------------+----------------+----------------+----------------+-------------------+
+| time           | linear_its     | nonlinear_its  | tot_linear_its | tot_nonlinear_its |
++----------------+----------------+----------------+----------------+-------------------+
+:                :                :                :                :                   :
+|   1.775000e+00 |   1.000000e+00 |   1.000000e+00 |   8.500000e+01 |      3.600000e+01 |
+|   1.800000e+00 |   3.000000e+01 |   7.000000e+00 |   1.150000e+02 |      4.300000e+01 |
+|   1.850000e+00 |   9.000000e+00 |   3.000000e+00 |   1.240000e+02 |      4.600000e+01 |
+|   1.950000e+00 |   1.100000e+01 |   3.000000e+00 |   1.350000e+02 |      4.900000e+01 |
+|   2.050000e+00 |   1.100000e+01 |   3.000000e+00 |   1.460000e+02 |      5.200000e+01 |
+|   2.150000e+00 |   9.000000e+00 |   4.000000e+00 |   1.550000e+02 |      5.600000e+01 |
+|   2.250000e+00 |   1.000000e+00 |   1.000000e+00 |   1.560000e+02 |      5.700000e+01 |
+|   2.350000e+00 |   1.000000e+00 |   1.000000e+00 |   1.570000e+02 |      5.800000e+01 |
+|   2.450000e+00 |   1.000000e+00 |   1.000000e+00 |   1.580000e+02 |      5.900000e+01 |
+|   2.550000e+00 |   1.000000e+00 |   1.000000e+00 |   1.590000e+02 |      6.000000e+01 |
+|   2.650000e+00 |   1.000000e+00 |   1.000000e+00 |   1.600000e+02 |      6.100000e+01 |
+|   2.750000e+00 |   1.000000e+00 |   1.000000e+00 |   1.610000e+02 |      6.200000e+01 |
+|   2.850000e+00 |   1.000000e+00 |   1.000000e+00 |   1.620000e+02 |      6.300000e+01 |
+|   2.950000e+00 |   1.000000e+00 |   1.000000e+00 |   1.630000e+02 |      6.400000e+01 |
+|   3.000000e+00 |   1.000000e+00 |   1.000000e+00 |   1.640000e+02 |      6.500000e+01 |
++----------------+----------------+----------------+----------------+-------------------+
+
+NEWTON:
+timesteps = 30
++----------------+----------------+----------------+----------------+-------------------+
+| time           | linear_its     | nonlinear_its  | tot_linear_its | tot_nonlinear_its |
++----------------+----------------+----------------+----------------+-------------------+
+:                :                :                :                :                   :
+|   1.600000e+00 |   1.000000e+00 |   1.000000e+00 |   3.900000e+01 |      3.900000e+01 |
+|   1.700000e+00 |   1.000000e+00 |   1.000000e+00 |   4.000000e+01 |      4.000000e+01 |
+|   1.800000e+00 |   8.000000e+00 |   8.000000e+00 |   4.800000e+01 |      4.800000e+01 |
+|   1.900000e+00 |   6.000000e+00 |   6.000000e+00 |   5.400000e+01 |      5.400000e+01 |
+|   2.000000e+00 |   7.000000e+00 |   7.000000e+00 |   6.100000e+01 |      6.100000e+01 |
+|   2.100000e+00 |   5.000000e+00 |   5.000000e+00 |   6.600000e+01 |      6.600000e+01 |
+|   2.200000e+00 |   3.000000e+00 |   3.000000e+00 |   6.900000e+01 |      6.900000e+01 |
+|   2.300000e+00 |   1.000000e+00 |   1.000000e+00 |   7.000000e+01 |      7.000000e+01 |
+|   2.400000e+00 |   1.000000e+00 |   1.000000e+00 |   7.100000e+01 |      7.100000e+01 |
+|   2.500000e+00 |   1.000000e+00 |   1.000000e+00 |   7.200000e+01 |      7.200000e+01 |
+|   2.600000e+00 |   1.000000e+00 |   1.000000e+00 |   7.300000e+01 |      7.300000e+01 |
+|   2.700000e+00 |   1.000000e+00 |   1.000000e+00 |   7.400000e+01 |      7.400000e+01 |
+|   2.800000e+00 |   1.000000e+00 |   1.000000e+00 |   7.500000e+01 |      7.500000e+01 |
+|   2.900000e+00 |   1.000000e+00 |   1.000000e+00 |   7.600000e+01 |      7.600000e+01 |
+|   3.000000e+00 |   1.000000e+00 |   1.000000e+00 |   7.700000e+01 |      7.700000e+01 |
++----------------+----------------+----------------+----------------+-------------------+
+
+
+With normals and perturbations in pmat:
+PJFNK
+timesteps = 32
++----------------+----------------+----------------+----------------+-------------------+
+| time           | linear_its     | nonlinear_its  | tot_linear_its | tot_nonlinear_its |
++----------------+----------------+----------------+----------------+-------------------+
+:                :                :                :                :                   :
+|   1.675000e+00 |   1.000000e+00 |   1.000000e+00 |   9.300000e+01 |      3.700000e+01 |
+|   1.775000e+00 |   1.000000e+00 |   1.000000e+00 |   9.400000e+01 |      3.800000e+01 |
+|   1.875000e+00 |   2.800000e+01 |   8.000000e+00 |   1.220000e+02 |      4.600000e+01 |
+|   1.975000e+00 |   1.700000e+01 |   4.000000e+00 |   1.390000e+02 |      5.000000e+01 |
+|   2.075000e+00 |   1.500000e+01 |   4.000000e+00 |   1.540000e+02 |      5.400000e+01 |
+|   2.175000e+00 |   7.000000e+00 |   3.000000e+00 |   1.610000e+02 |      5.700000e+01 |
+|   2.275000e+00 |   1.000000e+00 |   1.000000e+00 |   1.620000e+02 |      5.800000e+01 |
+|   2.375000e+00 |   1.000000e+00 |   1.000000e+00 |   1.630000e+02 |      5.900000e+01 |
+|   2.475000e+00 |   1.000000e+00 |   1.000000e+00 |   1.640000e+02 |      6.000000e+01 |
+|   2.575000e+00 |   1.000000e+00 |   1.000000e+00 |   1.650000e+02 |      6.100000e+01 |
+|   2.675000e+00 |   1.000000e+00 |   1.000000e+00 |   1.660000e+02 |      6.200000e+01 |
+|   2.775000e+00 |   1.000000e+00 |   1.000000e+00 |   1.670000e+02 |      6.300000e+01 |
+|   2.875000e+00 |   1.000000e+00 |   1.000000e+00 |   1.680000e+02 |      6.400000e+01 |
+|   2.975000e+00 |   1.000000e+00 |   1.000000e+00 |   1.690000e+02 |      6.500000e+01 |
+|   3.000000e+00 |   1.000000e+00 |   1.000000e+00 |   1.700000e+02 |      6.600000e+01 |
++----------------+----------------+----------------+----------------+-------------------+
+
+NEWTON
+timesteps = 30
++----------------+----------------+----------------+----------------+-------------------+
+| time           | linear_its     | nonlinear_its  | tot_linear_its | tot_nonlinear_its |
++----------------+----------------+----------------+----------------+-------------------+
+:                :                :                :                :                   :
+|   1.600000e+00 |   1.000000e+00 |   1.000000e+00 |   4.000000e+01 |      4.000000e+01 |
+|   1.700000e+00 |   1.000000e+00 |   1.000000e+00 |   4.100000e+01 |      4.100000e+01 |
+|   1.800000e+00 |   8.000000e+00 |   8.000000e+00 |   4.900000e+01 |      4.900000e+01 |
+|   1.900000e+00 |   7.000000e+00 |   7.000000e+00 |   5.600000e+01 |      5.600000e+01 |
+|   2.000000e+00 |   7.000000e+00 |   7.000000e+00 |   6.300000e+01 |      6.300000e+01 |
+|   2.100000e+00 |   4.000000e+00 |   4.000000e+00 |   6.700000e+01 |      6.700000e+01 |
+|   2.200000e+00 |   3.000000e+00 |   3.000000e+00 |   7.000000e+01 |      7.000000e+01 |
+|   2.300000e+00 |   1.000000e+00 |   1.000000e+00 |   7.100000e+01 |      7.100000e+01 |
+|   2.400000e+00 |   1.000000e+00 |   1.000000e+00 |   7.200000e+01 |      7.200000e+01 |
+|   2.500000e+00 |   1.000000e+00 |   1.000000e+00 |   7.300000e+01 |      7.300000e+01 |
+|   2.600000e+00 |   1.000000e+00 |   1.000000e+00 |   7.400000e+01 |      7.400000e+01 |
+|   2.700000e+00 |   1.000000e+00 |   1.000000e+00 |   7.500000e+01 |      7.500000e+01 |
+|   2.800000e+00 |   1.000000e+00 |   1.000000e+00 |   7.600000e+01 |      7.600000e+01 |
+|   2.900000e+00 |   1.000000e+00 |   1.000000e+00 |   7.700000e+01 |      7.700000e+01 |
+|   3.000000e+00 |   1.000000e+00 |   1.000000e+00 |   7.800000e+01 |      7.800000e+01 |
++----------------+----------------+----------------+----------------+-------------------+
+
+# 7/9/18
+
+Test results
+
+lindad@inl606513:~/projects2/moose/test((HEAD detached at 1b4ec50b65))$ ./run_tests -j24 --re lower_d -p 2
+Final Test Results:
+--------------------------------------------------------------------------------------------------------------
+mesh_modifiers/lower_d_block.lower_d ...................................................................... OK
+mesh_modifiers/lower_d_block.second_order ................................................... FAILED (EXODIFF)
+--------------------------------------------------------------------------------------------------------------
+Ran 2 tests in 2.6 seconds.
+1 passed, 0 skipped, 0 pending, 1 FAILED
+lindad@inl606513:~/projects2/moose/test((HEAD detached at 1b4ec50b65))$ ./run_tests -j24 --re lower_d -p 4
+mesh_modifiers/lower_d_block.lower_d ...................................................................... OK
+mesh_modifiers/lower_d_block.second_order ................................................................. OK
+--------------------------------------------------------------------------------------------------------------
+Ran 2 tests in 2.6 seconds.
+2 passed, 0 skipped, 0 pending, 0 failed
+lindad@inl606513:~/projects2/moose/test((HEAD detached at 1b4ec50b65))$ ./run_tests -j24 --re lower_d -p 3
+mesh_modifiers/lower_d_block.lower_d ...................................................................... OK
+mesh_modifiers/lower_d_block.second_order ................................................................. OK
+--------------------------------------------------------------------------------------------------------------
+Ran 2 tests in 2.5 seconds.
+2 passed, 0 skipped, 0 pending, 0 failed
+lindad@inl606513:~/projects2/moose/test((HEAD detached at 1b4ec50b65))$ ./run_tests -j24 --re lower_d -p 2
+mesh_modifiers/lower_d_block.lower_d ...................................................................... OK
+mesh_modifiers/lower_d_block.second_order ................................................................. OK
+--------------------------------------------------------------------------------------------------------------
+Ran 2 tests in 2.5 seconds.
+2 passed, 0 skipped, 0 pending, 0 failed
+lindad@inl606513:~/projects2/moose/test((HEAD detached at 1b4ec50b65))$ ./run_tests -j24 --re lower_d -p 2
+mesh_modifiers/lower_d_block.second_order ................................................................. OK
+mesh_modifiers/lower_d_block.lower_d ...................................................................... OK
+--------------------------------------------------------------------------------------------------------------
+Ran 2 tests in 2.6 seconds.
+2 passed, 0 skipped, 0 pending, 0 failed
+lindad@inl606513:~/projects2/moose/test((HEAD detached at 1b4ec50b65))$ ./run_tests -j24 --re lower_d -p 2
+mesh_modifiers/lower_d_block.second_order: Working Directory: /Users/lindad/projects2/moose/test/tests/mesh_modifiers/lower_d_block
+mesh_modifiers/lower_d_block.second_order: Running command: mpiexec -n 2 /Users/lindad/projects2/moose/test/moose_test-opt --n-threads=1 -i lower_d.i Mesh/second_order=true Outputs/file_base=lower_d_second_order_out GlobalParams/order=SECOND Mesh/nx=5 Mesh/ny=5 --error --error-unused --error-override --no-gdb-backtrace
+mesh_modifiers/lower_d_block.second_order:
+mesh_modifiers/lower_d_block.second_order:
+mesh_modifiers/lower_d_block.second_order: ===================================================================================
+mesh_modifiers/lower_d_block.second_order: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+mesh_modifiers/lower_d_block.second_order: =   PID 51038 RUNNING AT inl606513.inl.gov
+mesh_modifiers/lower_d_block.second_order: =   EXIT CODE: 11
+mesh_modifiers/lower_d_block.second_order: =   CLEANING UP REMAINING PROCESSES
+mesh_modifiers/lower_d_block.second_order: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+mesh_modifiers/lower_d_block.second_order: ===================================================================================
+mesh_modifiers/lower_d_block.second_order: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault: 11 (signal 11)
+mesh_modifiers/lower_d_block.second_order: This typically refers to a problem with your application.
+mesh_modifiers/lower_d_block.second_order: Please see the FAQ page for debugging suggestions
+mesh_modifiers/lower_d_block.second_order:
+mesh_modifiers/lower_d_block.second_order: ################################################################################
+mesh_modifiers/lower_d_block.second_order: Tester failed, reason: CRASH
+mesh_modifiers/lower_d_block.second_order:
+mesh_modifiers/lower_d_block.second_order ..................................................... FAILED (CRASH)
+mesh_modifiers/lower_d_block.lower_d ...................................................................... OK
+
+
+Final Test Results:
+--------------------------------------------------------------------------------------------------------------
+mesh_modifiers/lower_d_block.lower_d ...................................................................... OK
+mesh_modifiers/lower_d_block.second_order ..................................................... FAILED (CRASH)
+--------------------------------------------------------------------------------------------------------------
+Ran 2 tests in 2.7 seconds.
+1 passed, 0 skipped, 0 pending, 1 FAILED
+
+So the problem is that p_my_neighbor is non-null and different between the two
+processors. The elems are different
+
+Still same error with distributed mesh:
+  * frame #0: 0x000000010afb3f7a libmesh_dbg.0.dylib`libMesh::MacroFunctions::report_error(file="../src/mesh/distributed_mesh.C", line=344, date="nodate", time="notime") at libmesh_common.C:74
+    frame #1: 0x000000010bb8d72b libmesh_dbg.0.dylib`libMesh::DistributedMesh::elem_ptr(this=0x00007f92bd5e7cc0, i=36) at distributed_mesh.C:344
+    frame #2: 0x000000010ad71923 libmesh_dbg.0.dylib`libMesh::DofMap::elem_ptr(this=0x00007f92bec44060, mesh=0x00007f92bd5e7cc0, i=36) const at dof_map.C:307
+...
+    frame #8: 0x000000010ad96598 libmesh_dbg.0.dylib`void libMesh::DofMap::set_nonlocal_dof_objects<libMesh::MeshBase::element_iterator>(tis=0x00007f92bec44060, objects_begin=element_iterator @ 0x00007fff594eb800, objects_end=element_iterator @ 0x00007fff594eb7e0, mesh=0x0000f92bd5e7cc0, objects=f0 18 d7 0a 01 00 00 00 00 00 00 00 00 00 00 00)(libMesh::MeshBase&, unsigned int) const) at dof_map.C:438
+    frame #9: 0x000000010ad84f90 libmesh_dbg.0.dylib`libMesh::DofMap::distribute_dofs(this=0x00007f92bec44060, mesh=0x00007f92bd5e7cc0) atdof_map.C:971
+    frame #10: 0x000000010c97439f libmesh_dbg.0.dylib`libMesh::System::init_data(this=0x00007f92bec439b0) at system.C:270
+    frame #11: 0x000000010c93d5ab libmesh_dbg.0.dylib`libMesh::ImplicitSystem::init_data(this=0x00007f92bec439b0) at implicit_system.C:93
+    frame #12: 0x000000010c974234 libmesh_dbg.0.dylib`libMesh::System::init(this=0x00007f92bec439b0) at system.C:248
+    frame #13: 0x000000010c8b0bbd libmesh_dbg.0.dylib`libMesh::EquationSystems::init(this=0x00007f92c0000fa0) at equation_systems.C:109
+    frame #14: 0x0000000108094223 libmoose-dbg.0.dylib`FEProblemBase::init(this=0x00007f92c0000c18) at FEProblemBase.C:3786
+    frame #15: 0x0000000107259adc libmoose-dbg.0.dylib`InitProblemAction::act(this=0x00007f92bd5b3308) at InitProblemAction.C:29
+    frame #16: 0x0000000107218549 libmoose-dbg.0.dylib`ActionWarehouse::executeActionsWithAction(this=0x00007f92bd84cfb8, task="init_problm") at ActionWarehouse.C:367
+    frame #17: 0x0000000107216e57 libmoose-dbg.0.dylib`ActionWarehouse::executeAllActions(this=0x00007f92bd84cfb8) at ActionWarehouse.C:33
+    frame #18: 0x00000001088427f7 libmoose-dbg.0.dylib`MooseApp::runInputFile(this=0x00007f92bd84ca18) at MooseApp.C:757
+    frame #19: 0x0000000108843ae1 libmoose-dbg.0.dylib`MooseApp::run(this=0x00007f92bd84ca18) at MooseApp.C:903
+    frame #20: 0x0000000106711373 moose_test-dbg`main(argc=15, argv=0x00007fff594ef7c8) at main.C:31
+    frame #21: 0x00007fffb5456235 libdyld.dylib`start + 1
+    frame #22: 0x00007fffb5456235 libdyld.dylib`start + 1
+
+# 7/10/18
+
+I don't know wtf the problem with BISON is and why I always get the dman
+variable group error:
+
+*** ERROR ***
+Error: could not map variable 0 to variable group.
+
+It happens in parallel on BN3X15; on serial the problem just takes
+forever. However, with sliding_block it runs great on the MeshModifier both with
+distributed and replicated mesh. I remembered this problem...it was due to
+setting `quadrature=true` for the `PenetrationLocator`
+
+*** ERROR ***
+Material property 'thermal_conductivity', requested by 'thermal_contact_conductivity_master_temp' is not defined on block 9000
+
+[AuxKernels]
+  [./gap_value_thermal_contact]
+    type = GapValueAux
+    boundary = 10
+    execute_on = 'INITIAL LINEAR'
+    normal_smoothing_distance = 0.1
+    order = SECOND
+    paired_boundary = 5
+    paired_variable = temp
+    variable = paired_temp
+  [../]
+  [./penetration_thermal_contact]
+    type = PenetrationAux
+    boundary = 10
+    execute_on = 'INITIAL LINEAR'
+    normal_smoothing_distance = 0.1
+    order = SECOND
+    paired_boundary = 5
+    variable = penetration
+  [../]
+  [./paired_k_temp_slave_0]
+    type = GapValueAux
+    boundary = 10
+    execute_on = TIMESTEP_BEGIN
+    normal_smoothing_distance = 0.1
+    order = SECOND
+    paired_boundary = 5
+    paired_variable = conductivity_temp
+    variable = paired_k_temp
+  [../]
+  [./thermal_contact_conductivity_slave_temp]
+    type = MaterialRealAux
+    execute_on = TIMESTEP_END
+    property = thermal_conductivity
+    variable = conductivity_temp
+  [../]
+  [./thermal_contact_conductivity_master_temp]
+    type = MaterialRealAux
+    execute_on = TIMESTEP_END
+    property = thermal_conductivity
+    variable = conductivity_temp
+  [../]
+[]
+
+[AuxVariables]
+  [./penetration]
+    order = SECOND
+  [../]
+  [./paired_temp]
+    order = SECOND
+  [../]
+  [./paired_k_temp]
+    order = SECOND
+  [../]
+  [./conductivity_temp]
+    family = MONOMIAL
+    order = CONSTANT
+  [../]
+  [./conductivity_temp]
+    family = MONOMIAL
+    order = CONSTANT
+  [../]
+[]
+
+[BCs]
+  [./gap_bc_thermal_contact]
+    type = GapHeatTransferLWR
+    boundary = 10
+    disp_x = disp_x
+    disp_y = disp_y
+    disp_z = disp_y
+    displacements = 'disp_x disp_y'
+    gap_distance = penetration
+    gap_temp = paired_temp
+    order = SECOND
+    variable = temp
+  [../]
+[]
+
+[DiracKernels]
+  [./GapHeatPointSourceMaster_thermal_contact]
+    type = GapHeatPointSourceMaster
+    boundary = 5
+    normal_smoothing_distance = 0.1
+    slave = 10
+    variable = temp
+  [../]
+[]
+
+[Materials]
+  [./gap_value_0]
+    type = GapConductanceLWR
+    boundary = 10
+    contact_pressure = contact_pressure
+    gap_distance = penetration
+    gap_k = paired_k_temp
+    gap_temp = paired_temp
+    gas_released = fis_gas_released
+    initial_moles = initial_moles
+    jump_distance_model = KENNARD
+    order = SECOND
+    plenum_pressure = plenum_pressure
+    roughness_coef = 3.2
+    roughness_fuel = 2e-06
+    variable = temp
+  [../]
+[]
+
+[AuxKernels]
+  [./gap_value_left_to_right]
+    type = GapValueAux
+    boundary = leftright
+    execute_on = 'INITIAL LINEAR'
+    paired_boundary = rightleft
+    paired_variable = temp
+    variable = paired_temp
+  [../]
+  [./gap_value_master_left_to_right]
+    type = GapValueAux
+    boundary = rightleft
+    execute_on = 'INITIAL LINEAR'
+    paired_boundary = leftright
+    paired_variable = temp
+    variable = paired_temp
+  [../]
+  [./penetration_left_to_right]
+    type = PenetrationAux
+    boundary = leftright
+    execute_on = 'INITIAL LINEAR'
+    paired_boundary = rightleft
+    variable = qpoint_penetration
+  [../]
+[]
+
+[AuxVariables]
+  [./qpoint_penetration]
+    family = MONOMIAL
+    order = CONSTANT
+  [../]
+  [./paired_temp]
+    family = MONOMIAL
+    order = CONSTANT
+  [../]
+[]
+
+[BCs]
+  [./gap_bc_left_to_right]
+    type = GapHeatTransfer
+    boundary = leftright
+    paired_boundary = rightleft
+    quadrature = true
+    use_displaced_mesh = true
+    variable = temp
+  [../]
+  [./gap_bc_master_left_to_right]
+    type = GapHeatTransfer
+    boundary = rightleft
+    paired_boundary = leftright
+    quadrature = true
+    use_displaced_mesh = true
+    variable = temp
+  [../]
+[]
+
+[Materials]
+  [./left_to_right_gap_value]
+    type = GapConductance
+    boundary = leftright
+    gap_conductivity = 3
+    paired_boundary = rightleft
+    quadrature = true
+    variable = temp
+  [../]
+  [./left_to_right_gap_value_master]
+    type = GapConductance
+    boundary = rightleft
+    gap_conductivity = 3
+    paired_boundary = leftright
+    quadrature = true
+    variable = temp
+  [../]
+[]
+
+Time Step 91, time = 2.63043e+07
+          old time = 2.53043e+07
+                dt = 1e+06
+            old dt = 1e+06
+
+
+
+Updating geometric search patches
+
+    |residual|_2 of individual variables:
+                     disp_x: 325524
+                     disp_y: 5184.65
+                     temp:   403.448
+                     lm:     2.3792e-07
+
+ 0 Nonlinear |R| = 3.255659e+05
+
+Time Step 1, time = 2.73043e+07
+          old time = 2.63043e+07
+                dt = 1e+06
+            old dt = 1e+06
+
+
+
+Updating geometric search patches
+
+    |residual|_2 of individual variables:
+                     disp_x: 3.11983e+06
+                     disp_y: 11798.1
+                     temp:   4770.2
+                     lm:     2.3792e-07
+
+ 0 Nonlinear |R| = 3.119857e+06
+
+superlu_dist: dlook_ahead_update.c:117
+
+The lagrange multiplier method appears to be producing singular matrices for the
+BISON problems. To wit with MUMPS:
+ 9 Nonlinear |R| = 1.201071e+03
+    0 KSP unpreconditioned resid norm 1.201071323885e+03 true resid norm            nan ||r(i)||/||b||            nan
+    0 KSP Residual norm 1.201071323885e+03 % max 1.000000000000e+00 min 1.000000000000e+00 max/min 1.000000000000e+00
+  Linear solve did not converge due to DIVERGED_PCSETUP_FAILED iterations 0
+                 PCSETUP_FAILED due to FACTOR_NUMERIC_ZEROPIVOT
+
+With superlu_dist, it just hangs at that nonlinear iteration.
+
+this=0x0000000115006000
+0x0000000115006800
+
+0x0000000113010000
+
+Bending contact PJFNK, mffd_err=1e-8, solve time = 30.5467, lagrange
++----------------+----------------+----------------+----------------+----------------+
+| time           | linear         | linear_tot     | nl             | nl_tot         |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+01 |   3.500000e+01 |   3.500000e+01 |   1.000000e+01 |   1.000000e+01 |
+|   2.000000e+01 |   2.800000e+01 |   6.300000e+01 |   7.000000e+00 |   1.700000e+01 |
+|   3.000000e+01 |   3.400000e+01 |   9.700000e+01 |   9.000000e+00 |   2.600000e+01 |
+|   4.000000e+01 |   3.500000e+01 |   1.320000e+02 |   8.000000e+00 |   3.400000e+01 |
+|   5.000000e+01 |   3.700000e+01 |   1.690000e+02 |   1.000000e+01 |   4.400000e+01 |
+|   6.000000e+01 |   4.400000e+01 |   2.130000e+02 |   1.000000e+01 |   5.400000e+01 |
+|   7.000000e+01 |   5.500000e+01 |   2.680000e+02 |   1.300000e+01 |   6.700000e+01 |
+|   8.000000e+01 |   3.700000e+01 |   3.050000e+02 |   7.000000e+00 |   7.400000e+01 |
+|   9.000000e+01 |   1.180000e+02 |   4.230000e+02 |   2.700000e+01 |   1.010000e+02 |
+|   1.000000e+02 |   4.000000e+01 |   4.630000e+02 |   7.000000e+00 |   1.080000e+02 |
++----------------+----------------+----------------+----------------+----------------+
+
+Bending contact PJFNK, mffd_err=1e-7, lagrange
++----------------+----------------+----------------+----------------+----------------+
+| time           | linear         | linear_tot     | nl             | nl_tot         |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+01 |   3.500000e+01 |   3.500000e+01 |   1.000000e+01 |   1.000000e+01 |
+|   2.000000e+01 |   2.900000e+01 |   6.400000e+01 |   7.000000e+00 |   1.700000e+01 |
+|   3.000000e+01 |   3.400000e+01 |   9.800000e+01 |   9.000000e+00 |   2.600000e+01 |
+|   4.000000e+01 |   3.500000e+01 |   1.330000e+02 |   8.000000e+00 |   3.400000e+01 |
+|   5.000000e+01 |   3.700000e+01 |   1.700000e+02 |   1.000000e+01 |   4.400000e+01 |
+|   6.000000e+01 |   4.400000e+01 |   2.140000e+02 |   1.000000e+01 |   5.400000e+01 |
+|   7.000000e+01 |   5.500000e+01 |   2.690000e+02 |   1.300000e+01 |   6.700000e+01 |
+|   8.000000e+01 |   3.700000e+01 |   3.060000e+02 |   7.000000e+00 |   7.400000e+01 |
+|   9.000000e+01 |   1.500000e+02 |   4.560000e+02 |   3.300000e+01 |   1.070000e+02 |
+|   1.000000e+02 |   4.000000e+01 |   4.960000e+02 |   7.000000e+00 |   1.140000e+02 |
++----------------+----------------+----------------+----------------+----------------+
+
+Bending contact NEWTON, solve time = 16.774, lagrange
++----------------+----------------+----------------+----------------+----------------+
+| time           | linear         | linear_tot     | nl             | nl_tot         |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+01 |   1.400000e+01 |   1.400000e+01 |   1.400000e+01 |   1.400000e+01 |
+|   2.000000e+01 |   1.300000e+01 |   2.700000e+01 |   1.300000e+01 |   2.700000e+01 |
+|   3.000000e+01 |   1.400000e+01 |   4.100000e+01 |   1.300000e+01 |   4.000000e+01 |
+|   4.000000e+01 |   1.300000e+01 |   5.400000e+01 |   1.300000e+01 |   5.300000e+01 |
+|   5.000000e+01 |   1.300000e+01 |   6.700000e+01 |   1.300000e+01 |   6.600000e+01 |
+|   6.000000e+01 |   3.600000e+01 |   1.030000e+02 |   3.600000e+01 |   1.020000e+02 |
+|   7.000000e+01 |   1.600000e+01 |   1.190000e+02 |   1.500000e+01 |   1.170000e+02 |
+|   8.000000e+01 |   1.500000e+01 |   1.340000e+02 |   1.400000e+01 |   1.310000e+02 |
+|   9.000000e+01 |   2.100000e+01 |   1.550000e+02 |   1.900000e+01 |   1.500000e+02 |
+|   1.000000e+02 |   1.500000e+01 |   1.700000e+02 |   1.500000e+01 |   1.650000e+02 |
++----------------+----------------+----------------+----------------+----------------+
+
+Bending contact PJFNK, mffd_err=default, solve time = 12.948, penalty
++----------------+----------------+----------------+----------------+----------------+
+| time           | linear         | linear_tot     | nl             | nl_tot         |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+01 |   1.200000e+01 |   1.200000e+01 |   4.000000e+00 |   4.000000e+00 |
+|   2.000000e+01 |   8.000000e+00 |   2.000000e+01 |   4.000000e+00 |   8.000000e+00 |
+|   3.000000e+01 |   4.000000e+00 |   2.400000e+01 |   3.000000e+00 |   1.100000e+01 |
+|   4.000000e+01 |   2.700000e+01 |   5.100000e+01 |   7.000000e+00 |   1.800000e+01 |
+|   5.000000e+01 |   1.600000e+01 |   6.700000e+01 |   5.000000e+00 |   2.300000e+01 |
+|   6.000000e+01 |   9.000000e+00 |   7.600000e+01 |   3.000000e+00 |   2.600000e+01 |
+|   7.000000e+01 |   7.600000e+01 |   1.520000e+02 |   1.500000e+01 |   4.100000e+01 |
+|   8.000000e+01 |   5.400000e+01 |   2.060000e+02 |   6.000000e+00 |   4.700000e+01 |
+|   9.000000e+01 |   9.000000e+00 |   2.150000e+02 |   3.000000e+00 |   5.000000e+01 |
+|   1.000000e+02 |   1.000000e+01 |   2.250000e+02 |   4.000000e+00 |   5.400000e+01 |
++----------------+----------------+----------------+----------------+----------------+
+
+Bending contact NEWTON, solve time = 4.89415, penalty
++----------------+----------------+----------------+----------------+----------------+
+| time           | linear         | linear_tot     | nl             | nl_tot         |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+01 |   4.000000e+00 |   4.000000e+00 |   4.000000e+00 |   4.000000e+00 |
+|   2.000000e+01 |   4.000000e+00 |   8.000000e+00 |   4.000000e+00 |   8.000000e+00 |
+|   3.000000e+01 |   4.000000e+00 |   1.200000e+01 |   4.000000e+00 |   1.200000e+01 |
+|   4.000000e+01 |   4.000000e+00 |   1.600000e+01 |   4.000000e+00 |   1.600000e+01 |
+|   5.000000e+01 |   5.000000e+00 |   2.100000e+01 |   5.000000e+00 |   2.100000e+01 |
+|   6.000000e+01 |   3.000000e+00 |   2.400000e+01 |   3.000000e+00 |   2.400000e+01 |
+|   7.000000e+01 |   3.000000e+00 |   2.700000e+01 |   3.000000e+00 |   2.700000e+01 |
+|   8.000000e+01 |   2.000000e+00 |   2.900000e+01 |   2.000000e+00 |   2.900000e+01 |
+|   9.000000e+01 |   3.000000e+00 |   3.200000e+01 |   3.000000e+00 |   3.200000e+01 |
+|   1.000000e+02 |   4.000000e+00 |   3.600000e+01 |   4.000000e+00 |   3.600000e+01 |
++----------------+----------------+----------------+----------------+----------------+
+
+# 8/2/18
+
+For default template paramters, there must be agreement between the LHS and
+RHS. This can never work:
+
+template<..., typename T = 0>
+
+because the LHS is a type and the RHS is a non-type (e.g. it's integral). This
+can work if the instantiation is consistent:
+
+template<..., typename T::type = 0>
+
+e.g. if typename T::type yields an integral type, e.g. not a type. So the
+qualification, e.g. the nested :: specifier, makes the difference between an
+immediate compilation error and an instantiation dependent compilation error.
+
+Note that template<..., typename ...::... = void> will not work and will result
+in this compilation error with clang: "expected '(' for function-style cast or
+type construction". E.g. no qualification can occur in the default parameter
+declaration when the RHS is a type (e.g. void).
+
+# 8/8/18
+
+Contact line search: 58 non-linears
+Basic: No convergence
+Bt: 53 non-linears
+
+Contact with 1e-4, 3:
+
+Postprocessor Values:
++----------------+------------------+----------------+----------------+----------------+
+| time           | contact_pressure | nonlinear_its  | penetration    | tot_nonlinears |
++----------------+------------------+----------------+----------------+----------------+
+|   0.000000e+00 |     0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e-01 |    -0.000000e+00 |   4.000000e+00 |  -1.442325e-02 |   4.000000e+00 |
+|   2.000000e-01 |    -0.000000e+00 |   6.000000e+00 |  -1.305756e-03 |   1.000000e+01 |
+|   3.000000e-01 |     8.068750e+03 |   7.000000e+00 |   1.613750e-04 |   1.700000e+01 |
+|   4.000000e-01 |     9.417125e+03 |   5.000000e+00 |   1.890896e-04 |   2.200000e+01 |
+|   5.000000e-01 |     6.944158e+03 |   8.000000e+00 |   1.397839e-04 |   3.000000e+01 |
+|   6.000000e-01 |    -0.000000e+00 |   7.000000e+00 |  -2.981951e-03 |   3.700000e+01 |
+|   7.000000e-01 |    -0.000000e+00 |   4.000000e+00 |  -1.660042e-02 |   4.100000e+01 |
+|   8.000000e-01 |    -0.000000e+00 |   4.000000e+00 |  -3.233490e-02 |   4.500000e+01 |
+|   9.000000e-01 |    -0.000000e+00 |   4.000000e+00 |  -4.770076e-02 |   4.900000e+01 |
+|   1.000000e+00 |    -0.000000e+00 |   4.000000e+00 |  -6.027205e-02 |   5.300000e+01 |
++----------------+------------------+----------------+----------------+----------------+
+
+# 8/9/18
+
+Definitely observe oscillations with lagrange multipliers when mesh is made fine.
+
+# 8/16/18
+
+It's impossible to resolve a method pointer to method overloads that differ only
+in their function arguments.
+
+# 8/20/18
+
+Here the correct perturbed residual vector:
+1.49012e-08
+0.
+-3.72529e-09
+0.
+-3.72529e-09
+-0.1
+0.
+-0.1
+
+# 8/23/18
+
+For SFINAE to work, the possible compilation errors **must** involve either
+types coming from the template parameters, or it must involve values whose types
+involve the template parameters. And for a templated method of a templated
+class, the template parameters that matter are that of the method!
+
+# 8/27/18
+
+It doesn't matter that one template overload is a better match than another...if
+any matches, it will have it's template arguments deduced and any side effects
+will be incited. However, if an error occurs in the body, and the overload is
+not as good a match as another, then things will be ok... e.g. the code in that
+template will not be evaluated.
+
+# 9/7/18
+
+When compiling a file with c++14 enabled that includes <iostream>, this is error:
+/usr/bin/../lib/gcc/x86_64-linux-gnu/4.8/../../../../include/c++/4.8/cstdio:120:11: error: no member named 'gets' in the global namespace
+  using ::gets;
+
+This is clearly a header error and happens because the stdc++ library (both lib
+and headers) is incomplete. The c++ library however is c++14 complete, and so if
+we include the c++ headers then we don't get any header error. But then we do
+get a linking error because we don't provide the definitions for the
+declarations in the c++ headers. Once we link to the c++ library, everything
+works. Wait, let's qualify that last sentence. This line compiles:
+
+clang++-3.5 -std=c++1y test.cpp -L$HOME/libcxx-3.5.0.src/installed/lib -lc++
+
+ldd -r reveals:
+
+	linux-vdso.so.1 =>  (0x00007ffd36f2c000)
+	libc++.so.1 => /home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so.1 (0x00007fa0b3702000)
+	libstdc++.so.6 => /usr/lib/x86_64-linux-gnu/libstdc++.so.6 (0x00007fa0b33fe000)
+	libm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x00007fa0b30f8000)
+	libgcc_s.so.1 => /lib/x86_64-linux-gnu/libgcc_s.so.1 (0x00007fa0b2ee2000)
+	libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007fa0b2b19000)
+	libpthread.so.0 => /lib/x86_64-linux-gnu/libpthread.so.0 (0x00007fa0b28fb000)
+	librt.so.1 => /lib/x86_64-linux-gnu/librt.so.1 (0x00007fa0b26f3000)
+	/lib64/ld-linux-x86-64.so.2 (0x00007fa0b3a9e000)
+
+If we run ldd -r on the c++ library:
+
+	linux-vdso.so.1 =>  (0x00007ffd51b28000)
+	libpthread.so.0 => /lib/x86_64-linux-gnu/libpthread.so.0 (0x00007fbe8f162000)
+	libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007fbe8ed99000)
+	libm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x00007fbe8ea93000)
+	librt.so.1 => /lib/x86_64-linux-gnu/librt.so.1 (0x00007fbe8e88b000)
+	libgcc_s.so.1 => /lib/x86_64-linux-gnu/libgcc_s.so.1 (0x00007fbe8e675000)
+	/lib64/ld-linux-x86-64.so.2 (0x00007fbe8f71c000)
+undefined symbol: __cxa_pure_virtual	(/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so.1)
+undefined symbol: _ZTVN10__cxxabiv117__class_type_infoE	(/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so.1)
+undefined symbol: _ZTVN10__cxxabiv121__vmi_class_type_infoE	(/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so.1)
+undefined symbol: _ZTVN10__cxxabiv120__si_class_type_infoE	(/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so.1)
+undefined symbol: __gxx_personality_v0	(/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so.1)
+undefined symbol: __cxa_end_catch	(/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so.1)
+undefined symbol: __cxa_allocate_exception	(/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so.1)
+undefined symbol: __cxa_guard_release	(/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so.1)
+undefined symbol: __cxa_begin_catch	(/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so.1)
+undefined symbol: __cxa_rethrow	(/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so.1)
+undefined symbol: __cxa_throw	(/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so.1)
+undefined symbol: __cxa_guard_abort	(/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so.1)
+undefined symbol: __cxa_free_exception	(/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so.1)
+undefined symbol: __cxa_guard_acquire	(/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so.1)
+
+We run into all these undefined references. These references either have to be
+provided by libc++abi or libstdc++. So for example if we compile like this:
+
+clang++-3.5 -std=c++1y -stdlib=libc++ test.cpp
+-L$HOME/libcxx-3.5.0.src/installed/lib -lc++
+
+then we get linker errors like the following:
+
+/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so: undefined reference to `__cxa_guard_release'
+/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so: undefined reference to `__cxa_pure_virtual'
+/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so: undefined reference to `__cxa_rethrow'
+/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so: undefined reference to `vtable for __cxxabiv1::__si_class_type_info'
+/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so: undefined reference to `__cxa_guard_abort'
+/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so: undefined reference to `vtable for __cxxabiv1::__class_type_info'
+/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so: undefined reference to `vtable for __cxxabiv1::__vmi_class_type_info'
+/home/lindad/libcxx-3.5.0.src/installed/lib/libc++.so: undefined reference to `__cxa_guard_acquire'
+
+This happens because the linker no longer appends -lstdc++ which would have
+provided those symbols. We can restore the compilation, however, if we run:
+
+clang++-3.5 -std=c++1y -stdlib=libc++ test.cpp -L$HOME/libcxx-3.5.0.src/installed/lib -L$HOME/libcxxabi-3.5.0.src/installed/lib -lc++ -lc++abi
+
+**and** make sure that libc++abi is in LD_LIBRARY_PATH come run time.
+
+So, how does clang decide what c++ library to append to its link line?
+
+Potentially important llvm flags:
+
+CMAKE_CXX_COMPILER
+CMAKE_CXX_FLAGS
+CMAKE_C_COMPILER
+CMAKE_C_FLAGS
+CMAKE_EXE_LINKER_FLAGS
+CMAKE_SHARED_LINKER_FLAGS
+CMAKE_STATIC_LINKER_FLAGS
+GCC_INSTALL_PREFIX
+C_INCLUDE_DIRS
+
+Potentiall important libc++ flags:
+LIBCXX_CXX_ABI:STRING
+
+Possible values for LIBCXX_CXX_ABI:libstdc++,libcxxabi,libcxxrt,none
+
+# 9/25/18
+
+300x300 ad-simple-diffusion (100): 6.444 s
+300x300 ad-simple-diffusion (4): 3.774 s
+300x300 simple-diffusion: 3.648 s
+
+500x500 ad-simple-diffusion (100): 18.788
+500x500 ad-simple-diffusion (4): 11.380
+500x500 simple-diffusion: 11.135
+500x500 ad-simple-diffusion (100) with MooseVariableFE opt: 13.361
+
+# 10/3/18
+
+  Hand-coded Jacobian ----------
+Mat Object: () 1 MPI processes
+  type: seqaij
+row 0: (0, 1.)  (2, 0.)
+row 1: (0, 0.)  (1, 1.)  (2, 0.)  (3, 0.)
+row 2: (0, -2.)  (2, 4.)  (4, -2.)
+row 3: (0, 0.5)  (1, -1.)  (2, 0.)  (3, 2.)  (4, -0.5)  (5, -1.)
+row 4: (2, 0.)  (4, 1.)
+row 5: (2, 0.)  (3, 0.)  (4, 0.)  (5, 1.)
+  Finite difference Jacobian ----------
+Mat Object: 1 MPI processes
+  type: seqaij
+row 0: (0, 1.)
+row 1: (1, 1.)
+row 2: (0, -2.)  (2, 4.)  (4, -2.)
+row 3: (0, 0.5)  (1, -1.)  (2, -1.)  (3, 2.)  (4, 0.5)  (5, -1.)
+row 4: (4, 1.)
+row 5: (5, 1.)
+
+Time Step 2, time = 2
+                dt = 1
+
+ 0 Nonlinear |R| = 1.000000e+00
+  ---------- Testing Jacobian -------------
+  ||J - Jfd||_F/||J||_F = 0.411113, ||J - Jfd||_F = 2.44949
+  Hand-coded Jacobian ----------
+Mat Object: () 1 MPI processes
+  type: seqaij
+row 0: (0, 1.)  (2, 0.)
+row 1: (0, 0.)  (1, 1.)  (2, 0.)  (3, 0.)
+row 2: (0, -2.)  (2, 4.)  (4, -2.)
+row 3: (0, -0.5)  (1, -1.)  (2, 1.)  (3, 2.)  (4, -0.5)  (5, -1.)
+row 4: (2, 0.)  (4, 1.)
+row 5: (2, 0.)  (3, 0.)  (4, 0.)  (5, 1.)
+  Finite difference Jacobian ----------
+Mat Object: 1 MPI processes
+  type: seqaij
+row 0: (0, 1.)
+row 1: (1, 1.)
+row 2: (0, -2.)  (2, 4.)  (4, -2.)
+row 3: (0, 0.5)  (1, -1.)  (2, -1.)  (3, 2.)  (4, 0.5)  (5, -1.)
+row 4: (4, 1.)
+row 5: (5, 1.)
+      0 Linear |R| = 1.000000e+00
+      1 Linear |R| = 0.000000e+00
+ 1 Nonlinear |R| = 0.000000e+00
+ Solve Converged!
+
+ 0 Nonlinear |R| = 1.000000e+00
+  ---------- Testing Jacobian -------------
+  ||J - Jfd||_F/||J||_F = 0.31334, ||J - Jfd||_F = 1.83712
+  Hand-coded Jacobian ----------
+Mat Object: () 1 MPI processes
+  type: seqaij
+row 0: (0, 1.)  (2, 0.)
+row 1: (0, 0.)  (1, 1.)  (2, 0.)  (3, 0.)
+row 2: (0, -2.)  (2, 4.)  (4, -2.)
+row 3: (0, -0.25)  (1, -1.)  (2, 0.5)  (3, 2.)  (4, -0.25)  (5, -1.)
+row 4: (2, 0.)  (4, 1.)
+row 5: (2, 0.)  (3, 0.)  (4, 0.)  (5, 1.)
+  Finite difference Jacobian ----------
+Mat Object: 1 MPI processes
+  type: seqaij
+row 0: (0, 1.)
+row 1: (1, 1.)
+row 2: (0, -2.)  (2, 4.)  (4, -2.)
+row 3: (0, 0.5)  (1, -1.)  (2, -1.)  (3, 2.)  (4, 0.5)  (5, -1.)
+row 4: (4, 1.)
+row 5: (5, 1.)
+      0 Linear |R| = 1.000000e+00
+      1 Linear |R| = 0.000000e+00
+ 1 Nonlinear |R| = 0.000000e+00
+ Solve Converged!
+
+
+# 11/21/18
+
+  Hand-coded Jacobian ----------
+Mat Object: () 1 MPI processes
+  type: seqaij
+row 0: (0, 1.)  (1, 0.)  (2, -1.)  (3, 0.)
+row 1: (0, 0.25)  (1, 0.5)  (2, -0.25)  (3, -0.5)
+row 2: (0, -1.)  (1, 0.)  (2, 1.)  (3, 0.)
+row 3: (0, -0.25)  (1, -0.5)  (2, 0.25)  (3, 0.5)
+  Finite difference Jacobian ----------
+Mat Object: 1 MPI processes
+  type: seqaij
+row 0: (0, 1.)  (2, -1.)
+row 1: (0, -0.5)  (1, 0.5)  (2, 0.5)  (3, -0.5)
+row 2: (0, -1.)  (2, 1.)
+row 3: (0, 0.5)  (1, -0.5)  (2, -0.5)  (3, 0.5)
+  Hand-coded minus finite-difference Jacobian with tolerance 1e-05 ----------
+Mat Object: 1 MPI processes
+  type: seqaij
+row 0:
+row 1: (0, 0.75)  (2, -0.75)
+row 2:
+row 3: (0, -0.75)  (2, 0.75)
+
+In [1]: JxWp = 0.99999998174987925
+
+In [2]: JxW = 1
+
+In [3]: gradup = 1.0000000182501212
+
+In [4]: gradu = 1
+
+In [5]: gradtestp = -0.5000000091250606
+
+In [6]: gradtest = -.5
+
+In [7]: wscale = 2.7397079002971876e+07
+
+In [8]: wscale * (JxWp - JxW)
+Out[8]: -0.4999999999457628
+
+In [9]: wscale * (gradup - gradu)
+Out[9]: 0.5000000121125099
+
+In [10]: wscale * (gradtestp - gradtest)
+Out[10]: -0.25000000605625494

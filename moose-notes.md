@@ -9564,3 +9564,40 @@ Out[9]: 0.5000000121125099
 
 In [10]: wscale * (gradtestp - gradtest)
 Out[10]: -0.25000000605625494
+
+# 11/28/18
+
+Regular time: 3.33 s
+Updated AD: 7.96 s
+Old AD: 22.05 s
+Updated AD with right size: 5.56 s
+With loop optimizations: 5.772s
+With loop optimizations right size: 4.198s
+
+# 11/30/18
+
+PJFNK:
+Num steps = 19
+Total nonlinear = 85
+
+NEWTON:
+Num_steps = 19
+Total nonlinear = 82
+
+# 12/5/18
+
+With PETSc scaling:
+
+NEWTON without SUPG:
+Num steps = 21
+End time = 8.45688e-05
+nonlinear = 84
+linear = 1721
+
+With PETSc scaling
+
+NEWTON without SUPG:
+Num steps = 15
+End time = 8.675e-5
+nonlinear = 63
+linear = 1402

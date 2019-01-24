@@ -20,7 +20,7 @@ PBS run_tests command:
 
 etags moose:
 
-find . \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -iname "*.h" -o -iname "*.C" \) -print | etags -
+find . \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -iname "*.h" -o -iname "*.C" -o -iname "*.c" \) -print | etags -
 
 clang++ -std=c++11 -g -O0 -Iinclude -I$PETSC_DIR/include -o export_discontinuous libmesh_export_discotinuous_error.cxx exact_solution.C -Llib -Wl,-rpath -Wl,lib -lmesh_dbg
 
@@ -9601,3 +9601,371 @@ Num steps = 15
 End time = 8.675e-5
 nonlinear = 63
 linear = 1402
+
+# 1/23/18
+
+MOOSE 5f250a2486, libmesh after-libmesh-update: 154 seconds
+MOOSE 5f250a2486, libmesh after-vector-data: 163 seconds
+MOOSE 5f250a2486, libmesh before-libmesh-data: 136 seconds
+MOOSE 5f250a2486, libmesh before-vector-data: 163 seconds
+MOOSE 5f250a2486, libmesh 33da95a18: 154 seconds
+MOOSE 5f250a2486, libmesh 710a816fd: 156 seconds
+MOOSE 5f250a2486, libmesh 0dc5c33ba: 158.5 seconds
+MOOSE 5f250a2486, libmesh 9bcf8a1ca: 157 seconds
+MOOSE 0ea1a2d93a, libmesh ab2cf9725: 135 seconds
+MOOSE 5f250a2486, libmesh ab2cf9725: 138 seconds
+
+# 1/24/18
+
+Failed golem history (random):
+
+lindad@Alexanders-Pro:~/projects/golem/test/tests/crash_test(master)$ mpirun -np 11 ~/projects/golem/golem-dbg -i test.i
+
+Framework Information:
+MOOSE Version:           git commit bd8d51028f on 2019-01-21
+LibMesh Version:         8ddbf2885ac645d18fb238a4c17cf65e5d8df9c6
+PETSc Version:           3.10.3
+Current Time:            Thu Jan 24 13:58:41 2019
+Executable Timestamp:    Thu Jan 24 13:54:34 2019
+
+Parallelism:
+  Num Processors:          11
+  Num Threads:             1
+
+Mesh:
+  Parallel Type:           replicated
+  Mesh Dimension:          3
+  Spatial Dimension:       3
+  Nodes:
+    Total:                 7547
+    Local:                 808
+  Elems:
+    Total:                 39126
+    Local:                 3615
+  Num Subdomains:          4
+  Num Partitions:          11
+  Partitioner:             metis
+
+Nonlinear System:
+  Num DOFs:                37735
+  Num Local DOFs:          4040
+  Variables:               { "disp_x" "disp_y" "disp_z" "pore_pressure" "temperature" }
+  Finite Element Types:    "LAGRANGE"
+  Approximation Orders:    "FIRST"
+
+Auxiliary System:
+  Num DOFs:                234756
+  Num Local DOFs:          21690
+  Variables:               { "stress_xx" "stress_yy" "stress_zz" "stress_xy" "stress_xz" "stress_yz"
+                             }
+  Finite Element Types:    "MONOMIAL"
+  Approximation Orders:    "CONSTANT"
+
+Execution Information:
+  Executioner:             Transient
+  TimeStepper:             TimeSequenceStepper
+  Solver Mode:             NEWTON
+
+
+Time Step 0, time = 0
+                dt = 0
+
+
+Time Step 1, time = 1
+                dt = 1
+
+ 0 Nonlinear |R| = 9.727970e+05
+  0 SNES Function norm 9.727969590319e+05
+      0 Linear |R| = 9.727970e+05
+      1 Linear |R| = 8.534746e+01
+ 1 Nonlinear |R| = 8.534746e+01
+  1 SNES Function norm 8.534746454278e+01
+      0 Linear |R| = 8.534746e+01
+      1 Linear |R| = 7.218560e-03
+ 2 Nonlinear |R| = 7.218560e-03
+  2 SNES Function norm 7.218559876268e-03
+Nonlinear solve converged due to CONVERGED_FNORM_ABS iterations 2
+ Solve Converged!
+
+
+ ----------------------------------------------------------------------------
+| Reference count information                                                |
+ ----------------------------------------------------------------------------
+| N7libMesh10FEAbstractE reference count information:
+|  Creations:    18190
+|  Destructions: 18190
+| N7libMesh10Parameters5ValueE reference count information:
+|  Creations:    30363
+|  Destructions: 30363
+| N7libMesh12SparseMatrixIdEE reference count information:
+|  Creations:    8
+|  Destructions: 8
+| N7libMesh13NumericVectorIdEE reference count information:
+|  Creations:    73
+|  Destructions: 73
+| N7libMesh15EquationSystemsE reference count information:
+|  Creations:    2
+|  Destructions: 2
+| N7libMesh15GhostingFunctorE reference count information:
+|  Creations:    10
+|  Destructions: 10
+| N7libMesh15NonlinearSolverIdEE reference count information:
+|  Creations:    1
+|  Destructions: 1
+| N7libMesh4ElemE reference count information:
+|  Creations:    159780
+|  Destructions: 159780
+| N7libMesh4NodeE reference count information:
+|  Creations:    15094
+|  Destructions: 15094
+| N7libMesh5QBaseE reference count information:
+|  Creations:    54261
+|  Destructions: 54261
+| N7libMesh6DofMapE reference count information:
+|  Creations:    4
+|  Destructions: 4
+| N7libMesh6SystemE reference count information:
+|  Creations:    4
+|  Destructions: 4
+| N7libMesh9DofObjectE reference count information:
+|  Creations:    174874
+|  Destructions: 174874
+ ----------------------------------------------------------------------------
+lindad@Alexanders-Pro:~/projects/golem/test/tests/crash_test(master)$ mpirun -np 11 ~/projects/golem/golem-dbg -i test.i
+
+Framework Information:
+MOOSE Version:           git commit bd8d51028f on 2019-01-21
+LibMesh Version:         8ddbf2885ac645d18fb238a4c17cf65e5d8df9c6
+PETSc Version:           3.10.3
+Current Time:            Thu Jan 24 14:02:18 2019
+Executable Timestamp:    Thu Jan 24 13:54:34 2019
+
+Parallelism:
+  Num Processors:          11
+  Num Threads:             1
+
+Mesh:
+  Parallel Type:           replicated
+  Mesh Dimension:          3
+  Spatial Dimension:       3
+  Nodes:
+    Total:                 7547
+    Local:                 808
+  Elems:
+    Total:                 39126
+    Local:                 3615
+  Num Subdomains:          4
+  Num Partitions:          11
+  Partitioner:             metis
+
+Nonlinear System:
+  Num DOFs:                37735
+  Num Local DOFs:          4040
+  Variables:               { "disp_x" "disp_y" "disp_z" "pore_pressure" "temperature" }
+  Finite Element Types:    "LAGRANGE"
+  Approximation Orders:    "FIRST"
+
+Auxiliary System:
+  Num DOFs:                234756
+  Num Local DOFs:          21690
+  Variables:               { "stress_xx" "stress_yy" "stress_zz" "stress_xy" "stress_xz" "stress_yz"
+                             }
+  Finite Element Types:    "MONOMIAL"
+  Approximation Orders:    "CONSTANT"
+
+Execution Information:
+  Executioner:             Transient
+  TimeStepper:             TimeSequenceStepper
+  Solver Mode:             NEWTON
+
+
+Time Step 0, time = 0
+                dt = 0
+
+
+Time Step 1, time = 1
+                dt = 1
+
+ 0 Nonlinear |R| = 9.727970e+05
+  0 SNES Function norm 9.727969590319e+05
+      0 Linear |R| = 9.727970e+05
+      1 Linear |R| = 8.534746e+01
+ 1 Nonlinear |R| = 8.534746e+01
+  1 SNES Function norm 8.534746454279e+01
+      0 Linear |R| = 8.534746e+01
+      1 Linear |R| = 7.218560e-03
+ 2 Nonlinear |R| = 7.218560e-03
+  2 SNES Function norm 7.218559875459e-03
+Nonlinear solve converged due to CONVERGED_FNORM_ABS iterations 2
+ Solve Converged!
+
+
+ ----------------------------------------------------------------------------
+| Reference count information                                                |
+ ----------------------------------------------------------------------------
+| N7libMesh10FEAbstractE reference count information:
+|  Creations:    18190
+|  Destructions: 18190
+| N7libMesh10Parameters5ValueE reference count information:
+|  Creations:    30363
+|  Destructions: 30363
+| N7libMesh12SparseMatrixIdEE reference count information:
+|  Creations:    8
+|  Destructions: 8
+| N7libMesh13NumericVectorIdEE reference count information:
+|  Creations:    73
+|  Destructions: 73
+| N7libMesh15EquationSystemsE reference count information:
+|  Creations:    2
+|  Destructions: 2
+| N7libMesh15GhostingFunctorE reference count information:
+|  Creations:    10
+|  Destructions: 10
+| N7libMesh15NonlinearSolverIdEE reference count information:
+|  Creations:    1
+|  Destructions: 1
+| N7libMesh4ElemE reference count information:
+|  Creations:    159780
+|  Destructions: 159780
+| N7libMesh4NodeE reference count information:
+|  Creations:    15094
+|  Destructions: 15094
+| N7libMesh5QBaseE reference count information:
+|  Creations:    54261
+|  Destructions: 54261
+| N7libMesh6DofMapE reference count information:
+|  Creations:    4
+|  Destructions: 4
+| N7libMesh6SystemE reference count information:
+|  Creations:    4
+|  Destructions: 4
+| N7libMesh9DofObjectE reference count information:
+|  Creations:    174874
+|  Destructions: 174874
+ ----------------------------------------------------------------------------
+lindad@Alexanders-Pro:~/projects/golem/test/tests/crash_test(master)$
+lindad@Alexanders-Pro:~/projects/golem/test/tests/crash_test(master)$ mpirun -np 11 ~/projects/golem/golem-dbg -i test.i
+
+Framework Information:
+MOOSE Version:           git commit bd8d51028f on 2019-01-21
+LibMesh Version:         8ddbf2885ac645d18fb238a4c17cf65e5d8df9c6
+PETSc Version:           3.10.3
+Current Time:            Thu Jan 24 14:06:13 2019
+Executable Timestamp:    Thu Jan 24 13:54:34 2019
+
+Parallelism:
+  Num Processors:          11
+  Num Threads:             1
+
+Mesh:
+  Parallel Type:           replicated
+  Mesh Dimension:          3
+  Spatial Dimension:       3
+  Nodes:
+    Total:                 7547
+    Local:                 844
+  Elems:
+    Total:                 39126
+    Local:                 3629
+  Num Subdomains:          4
+  Num Partitions:          11
+  Partitioner:             metis
+
+Nonlinear System:
+  Num DOFs:                37735
+  Num Local DOFs:          4220
+  Variables:               { "disp_x" "disp_y" "disp_z" "pore_pressure" "temperature" }
+  Finite Element Types:    "LAGRANGE"
+  Approximation Orders:    "FIRST"
+
+Auxiliary System:
+  Num DOFs:                234756
+  Num Local DOFs:          21774
+  Variables:               { "stress_xx" "stress_yy" "stress_zz" "stress_xy" "stress_xz" "stress_yz"
+                             }
+  Finite Element Types:    "MONOMIAL"
+  Approximation Orders:    "CONSTANT"
+
+Execution Information:
+  Executioner:             Transient
+  TimeStepper:             TimeSequenceStepper
+  Solver Mode:             NEWTON
+
+Assertion `this->local_size() == v.local_size()' failed.
+this->local_size() = 4040
+v.local_size() = 4220
+
+Assertion `this->local_size() == v.local_size()' failed.
+this->local_size() = 3510
+v.local_size() = 3365
+
+
+Assertion `this->local_size() == v.local_size()' failed.
+this->local_size() = 3515
+v.local_size() = 3650
+
+
+Assertion `this->local_size() == v.local_size()' failed.
+this->local_size() = 3995
+v.local_size() = 3775
+
+
+[3] ../src/numerics/petsc_vector.CAssertion `this->local_size() == v.local_size()' failed.
+this->local_size() = 3305
+v.local_size() = 3360
+
+
+[4] ../src/numerics/petsc_vector.CAssertion `this->local_size() == v.local_size()' failed.
+this->local_size() = 3170
+v.local_size() = 2885
+
+
+[5] ../src/numerics/petsc_vector.C, line 567, compiled Assertion `this->local_size() == v.local_size()' failed.
+this->local_size() = 3360
+v.local_size() = 3530
+
+
+[6] ../src/numerics/petsc_vector.C, line 567, compiled nodate at Assertion `this->local_size() == v.local_size()' failed.
+this->local_size() = 3575
+v.local_size() = 3535
+
+
+[7] ../src/numerics/petsc_vector.C, line 567, compiled nodate at notime
+Assertion `this->local_size() == v.local_size()' failed.
+this->local_size() = 3820
+v.local_size() = 3595
+
+
+[8] ../src/numerics/petsc_vector.C, line 567, compiled nodate at notime
+Assertion `this->local_size() == v.local_size()' failed.
+this->local_size() = 2380
+v.local_size() = 3260
+
+
+[9] ../src/numerics/petsc_vector.C, line 567, compiled nodate at notime
+Assertion `this->local_size() == v.local_size()' failed.
+this->local_size() = 3065
+v.local_size() = 2560
+
+
+[10] ../src/numerics/petsc_vector.C, line 567, compiled nodate at notime
+
+[0] ../src/numerics/petsc_vector.C, line 567, compiled nodate at notime
+[1] ../src/numerics/petsc_vector.C, line 567, compiled nodate at notime
+[2] ../src/numerics/petsc_vector.C, line 567, compiled nodate at notime
+, line 567, compiled nodate at notime
+, line 567, compiled nodate at notime
+nodate at notime
+notime
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 6
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 1
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 2
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 3
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 4
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 5
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 7
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 8
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 9
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 10
+lindad@Alexanders-Pro:~/projects/golem/test/tests/crash_test(master)$ ls

@@ -9969,3 +9969,88 @@ application called MPI_Abort(MPI_COMM_WORLD, 1) - process 8
 application called MPI_Abort(MPI_COMM_WORLD, 1) - process 9
 application called MPI_Abort(MPI_COMM_WORLD, 1) - process 10
 lindad@Alexanders-Pro:~/projects/golem/test/tests/crash_test(master)$ ls
+
+# 2/7/19
+
+In order to even check whether to ghost element 1448, we must have a local
+element that has element 1448 as a neighbor.
+
+If the meshes are the same, then the local elements on each process must be the
+same, which means the neighbors of the local elements should be the same.
+
+FE:
+(lldb) p elem->id()
+(libMesh::dof_id_type) $0 = 664
+(lldb) p elem->centroid()
+(libMesh::Point) $1 = {
+  libMesh::TypeVector<double> = {
+    _coords = ([0] = -11.980474059469998, [1] = -8.0718520848701392, [2] = -19.374790370464325)
+  }
+}
+(lldb) p elem->n_neighbors()
+(unsigned int) $2 = 3
+(lldb) p elem->neighbor_ptr(0)->id()
+(libMesh::dof_id_type) $3 = 1448
+(lldb) p elem->neighbor_ptr(1)->id()
+(libMesh::dof_id_type) $4 = 678
+(lldb) p elem->neighbor_ptr(2)->id()
+(libMesh::dof_id_type) $5 = 683
+(lldb) p elem->neighbor_ptr(0)->centroid()
+(libMesh::Point) $1 = {
+  libMesh::TypeVector<double> = {
+    _coords = ([0] = -7.607472007162869, [1] = -2.5389266380419335, [2] = -23.063092092672985)
+  }
+}
+(lldb) p elem->neighbor_ptr(1)->centroid()
+(libMesh::Point) $4 = {
+  libMesh::TypeVector<double> = {
+    _coords = ([0] = -14.014609877951443, [1] = -13.641004916901389, [2] = -5.1979944109916687)
+  }
+}
+(lldb) p elem->neighbor_ptr(2)->centroid()
+(libMesh::Point) $5 = {
+  libMesh::TypeVector<double> = {
+    _coords = ([0] = -24.067560513814289, [1] = -17.952677090962727, [2] = -31.695480346679688)
+  }
+}
+
+Displaced:
+(lldb) p elem->id()
+(libMesh::dof_id_type) $0 = 664
+(lldb) p elem->centroid()
+(libMesh::Point) $1 = {
+  libMesh::TypeVector<double> = {
+    _coords = ([0] = -11.980474059469998, [1] = -8.0718520848701392, [2] = -19.374790370464325)
+  }
+}
+(lldb) p elem->n_neighbors()
+(unsigned int) $2 = 3
+(lldb) p elem->neighbor_ptr(0)->id()
+(libMesh::dof_id_type) $3 = 704
+(lldb) p elem->neighbor_ptr(1)->id()
+(libMesh::dof_id_type) $4 = 678
+(lldb) p elem->neighbor_ptr(2)->id()
+(libMesh::dof_id_type) $5 = 683
+(lldb) p elem->neighbor_ptr(0)->centroid()
+(libMesh::Point) $6 = {
+  libMesh::TypeVector<double> = {
+    _coords = ([0] = -14.503511334148547, [1] = -0.97677584178745746, [2] = -20.124373932679493)
+  }
+}
+(lldb) p elem->neighbor_ptr(1)->centroid()
+(libMesh::Point) $9 = {
+  libMesh::TypeVector<double> = {
+    _coords = ([0] = -14.014609877951443, [1] = -13.641004916901389, [2] = -5.1979944109916687)
+  }
+}
+(lldb) p elem->neighbor_ptr(2)->centroid()
+(libMesh::Point) $10 = {
+  libMesh::TypeVector<double> = {
+    _coords = ([0] = -24.067560513814289, [1] = -17.952677090962727, [2] = -31.695480346679688)
+  }
+}
+
+# 3/5/19
+
+Hand-coded: 8.821 seconds
+AD with array of 50: 24.806 seconds

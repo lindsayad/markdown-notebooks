@@ -10052,5 +10052,19 @@ Displaced:
 
 # 3/5/19
 
+Oprof:
+Alex Desktop:
 Hand-coded: 8.821 seconds
 AD with array of 50: 24.806 seconds
+
+cone:
+Hand-coded: 3.320 seconds
+AD with array of 50 with LU: 3.345 seconds
+AD with array of 50 with ILU: 9.085 seconds
+
+Opt:
+Andrews comp:
+Hand-coded: 3.24 seconds
+
+cone:
+Hand-coded: 3.30 seconds

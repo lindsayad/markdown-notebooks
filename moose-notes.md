@@ -20,7 +20,7 @@ PBS run_tests command:
 
 etags moose:
 
-find . \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -iname "*.h" -o -iname "*.C" -o -iname "*.c" \) -print | etags -
+find . \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -iname "*.h" -o -iname "*.hpp" -o -iname "*.C" -o -iname "*.c" \) -print | etags -
 
 clang++ -std=c++11 -g -O0 -Iinclude -I$PETSC_DIR/include -o export_discontinuous libmesh_export_discotinuous_error.cxx exact_solution.C -Llib -Wl,-rpath -Wl,lib -lmesh_dbg
 
@@ -10068,3 +10068,283 @@ Hand-coded: 3.24 seconds
 
 cone:
 Hand-coded: 3.30 seconds
+
+# 5/6/19
+
+The following are true:
+
+- You can explicitly instantiate a class template in a translation unit without method defininitions ahead of it
+- Template class method definitions can be scattered around in different translation units
+- You can have general method template defintions of an explicit intantiation of typename T **and** an explicit specializaiton for that type in a different translation unit and things compile fine
+  - However, if within the same translation unit you try to specialize after explicit specialization, you will get a compile error
+  - I feel like the case that compiles should violate the ODR...and indeed with g++ I do get a linker error!!!
+- An (full) explicit specialization is just like regular function definition...symbols are generated; if for example you fully specialized every method for typename T for a template class A, then you would not need to explicitly instantiate A<T> to use its symbols in another translation unit
+
+
+ad_lid_driven_stabilized test:
+
+- AD with dynamic sparse number vector: 20.8 seconds
+- FDP: 10.271 seconds
+- FD: too long for me to wait
+
+# 5/15/19
+
+Apples to apples comparison for penalty vs mortar lm for friction coefficient of
+.2
+
+Penalty:
+Time Step 159, time = 15, dt = 0.0725
+
+  Applying predictor with scale factor = 1.00
+ 0 Nonlinear |R| = 1.703625e+02
+      0 Linear |R| = 1.703625e+02
+      1 Linear |R| = 2.744749e+01
+      2 Linear |R| = 6.657438e+00
+      3 Linear |R| = 1.930771e+00
+      4 Linear |R| = 5.541552e-01
+      5 Linear |R| = 2.976619e-01
+      6 Linear |R| = 1.113352e-01
+      7 Linear |R| = 3.554547e-02
+      8 Linear |R| = 1.033846e-02
+      9 Linear |R| = 1.334584e-03
+  Linear solve converged due to CONVERGED_RTOL iterations 9
+ 1 Nonlinear |R| = 1.353936e-02
+      0 Linear |R| = 1.353936e-02
+      1 Linear |R| = 4.270217e-03
+      2 Linear |R| = 1.452055e-03
+      3 Linear |R| = 5.549396e-04
+      4 Linear |R| = 2.083166e-04
+      5 Linear |R| = 1.135023e-04
+      6 Linear |R| = 3.119195e-05
+      7 Linear |R| = 7.539745e-06
+      8 Linear |R| = 2.972689e-06
+      9 Linear |R| = 2.691927e-07
+     10 Linear |R| = 5.057462e-08
+  Linear solve converged due to CONVERGED_RTOL iterations 10
+ 2 Nonlinear |R| = 1.132549e-06
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 2
+ Solve Converged!
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+
+| time           | cum_lin        | cumulative     | lin            | num_nl         |
++----------------+----------------+----------------+----------------+----------------+
+:                :                :                :                :                :
+|   1.362750e+01 |   6.149000e+03 |   5.710000e+02 |   3.000000e+01 |   3.000000e+00 |
+|   1.372750e+01 |   6.178000e+03 |   5.740000e+02 |   2.900000e+01 |   3.000000e+00 |
+|   1.382750e+01 |   6.207000e+03 |   5.770000e+02 |   2.900000e+01 |   3.000000e+00 |
+|   1.392750e+01 |   6.236000e+03 |   5.800000e+02 |   2.900000e+01 |   3.000000e+00 |
+|   1.402750e+01 |   6.265000e+03 |   5.830000e+02 |   2.900000e+01 |   3.000000e+00 |
+|   1.412750e+01 |   6.295000e+03 |   5.860000e+02 |   3.000000e+01 |   3.000000e+00 |
+|   1.422750e+01 |   6.323000e+03 |   5.890000e+02 |   2.800000e+01 |   3.000000e+00 |
+|   1.432750e+01 |   6.351000e+03 |   5.920000e+02 |   2.800000e+01 |   3.000000e+00 |
+|   1.442750e+01 |   6.427000e+03 |   5.990000e+02 |   7.600000e+01 |   7.000000e+00 |
+|   1.452750e+01 |   6.467000e+03 |   6.030000e+02 |   4.000000e+01 |   4.000000e+00 |
+|   1.462750e+01 |   6.531000e+03 |   6.090000e+02 |   6.400000e+01 |   6.000000e+00 |
+|   1.472750e+01 |   6.583000e+03 |   6.130000e+02 |   5.200000e+01 |   4.000000e+00 |
+|   1.482750e+01 |   6.620000e+03 |   6.160000e+02 |   3.700000e+01 |   3.000000e+00 |
+|   1.492750e+01 |   6.648000e+03 |   6.190000e+02 |   2.800000e+01 |   3.000000e+00 |
+|   1.500000e+01 |   6.667000e+03 |   6.210000e+02 |   1.900000e+01 |   2.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+
+
+
+
+real	0m40.838s
+user	0m37.303s
+sys	0m3.506s
+
+
+LM:
+Time Step 169, time = 15, dt = 0.075
+
+  Applying predictor with scale factor = 1.00
+ 0 Nonlinear |R| = 2.494830e+02
+      0 Linear |R| = 2.494830e+02
+      1 Linear |R| = 1.934460e-02
+      2 Linear |R| = 1.934212e-02
+      3 Linear |R| = 1.934172e-02
+      4 Linear |R| = 6.071547e-06
+  Linear solve converged due to CONVERGED_RTOL iterations 4
+ 1 Nonlinear |R| = 6.930212e-01
+      0 Linear |R| = 6.930212e-01
+      1 Linear |R| = 1.656499e-04
+      2 Linear |R| = 1.656217e-04
+      3 Linear |R| = 2.914254e-06
+  Linear solve converged due to CONVERGED_RTOL iterations 3
+ 2 Nonlinear |R| = 1.091925e-02
+      0 Linear |R| = 1.091925e-02
+      1 Linear |R| = 3.577890e-06
+      2 Linear |R| = 3.577821e-06
+      3 Linear |R| = 1.791646e-07
+      4 Linear |R| = 2.564853e-13
+  Linear solve converged due to CONVERGED_RTOL iterations 4
+ 3 Nonlinear |R| = 5.784634e-04
+      0 Linear |R| = 5.784634e-04
+      1 Linear |R| = 2.250563e-07
+      2 Linear |R| = 2.916066e-08
+      3 Linear |R| = 3.648686e-12
+  Linear solve converged due to CONVERGED_RTOL iterations 3
+ 4 Nonlinear |R| = 2.289744e-07
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 4
+ Solve Converged!
+
+Outlier Variable Residual Norms:
+  disp_y: 2.189927e-07
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+
+| time           | cum_lin        | cumulative     | lin            | num_nl         |
++----------------+----------------+----------------+----------------+----------------+
+:                :                :                :                :                :
+|   1.367500e+01 |   1.702000e+03 |   6.290000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.377500e+01 |   1.709000e+03 |   6.320000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.387500e+01 |   1.716000e+03 |   6.350000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.397500e+01 |   1.723000e+03 |   6.380000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.407500e+01 |   1.730000e+03 |   6.410000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.417500e+01 |   1.736000e+03 |   6.440000e+02 |   6.000000e+00 |   3.000000e+00 |
+|   1.427500e+01 |   1.742000e+03 |   6.470000e+02 |   6.000000e+00 |   3.000000e+00 |
+|   1.437500e+01 |   1.766000e+03 |   6.540000e+02 |   2.400000e+01 |   7.000000e+00 |
+|   1.447500e+01 |   1.777000e+03 |   6.570000e+02 |   1.100000e+01 |   3.000000e+00 |
+|   1.457500e+01 |   1.788000e+03 |   6.600000e+02 |   1.100000e+01 |   3.000000e+00 |
+|   1.467500e+01 |   1.797000e+03 |   6.630000e+02 |   9.000000e+00 |   3.000000e+00 |
+|   1.477500e+01 |   1.814000e+03 |   6.700000e+02 |   1.700000e+01 |   7.000000e+00 |
+|   1.482500e+01 |   1.830000e+03 |   6.770000e+02 |   1.600000e+01 |   7.000000e+00 |
+|   1.492500e+01 |   1.834000e+03 |   6.790000e+02 |   4.000000e+00 |   2.000000e+00 |
+|   1.500000e+01 |   1.848000e+03 |   6.830000e+02 |   1.400000e+01 |   4.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+
+
+
+
+real	0m38.985s
+user	0m37.632s
+sys	0m1.329s
+
+Vastly superior performance of mortar lm with respect to linear residuals, but
+it requires more time steps and more non-linear iterations. This results in the
+total time of the simulation being about the same: 41s for penatly and 39s for LM.
+
+Now comparison for frictional coefficient of .4
+
+LM:
+Time Step 156, time = 15, dt = 0.025
+
+  Applying predictor with scale factor = 1.00
+ 0 Nonlinear |R| = 2.780343e+02
+      0 Linear |R| = 2.780343e+02
+      1 Linear |R| = 2.858855e-02
+      2 Linear |R| = 2.628108e-04
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 1 Nonlinear |R| = 2.896306e-02
+      0 Linear |R| = 2.896306e-02
+      1 Linear |R| = 2.338729e-06
+      2 Linear |R| = 1.293707e-10
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 2 Nonlinear |R| = 2.372756e-06
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 2
+ Solve Converged!
+
+Outlier Variable Residual Norms:
+  disp_y: 2.154747e-06
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+
+| time           | cum_lin        | cumulative     | lin            | num_nl         |
++----------------+----------------+----------------+----------------+----------------+
+:                :                :                :                :                :
+|   1.367500e+01 |   1.737000e+03 |   6.200000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.377500e+01 |   1.744000e+03 |   6.230000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.387500e+01 |   1.751000e+03 |   6.260000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.397500e+01 |   1.758000e+03 |   6.290000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.407500e+01 |   1.765000e+03 |   6.320000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.417500e+01 |   1.771000e+03 |   6.350000e+02 |   6.000000e+00 |   3.000000e+00 |
+|   1.427500e+01 |   1.777000e+03 |   6.380000e+02 |   6.000000e+00 |   3.000000e+00 |
+|   1.437500e+01 |   1.806000e+03 |   6.450000e+02 |   2.900000e+01 |   7.000000e+00 |
+|   1.447500e+01 |   1.817000e+03 |   6.480000e+02 |   1.100000e+01 |   3.000000e+00 |
+|   1.457500e+01 |   1.828000e+03 |   6.510000e+02 |   1.100000e+01 |   3.000000e+00 |
+|   1.467500e+01 |   1.837000e+03 |   6.540000e+02 |   9.000000e+00 |   3.000000e+00 |
+|   1.477500e+01 |   1.849000e+03 |   6.590000e+02 |   1.200000e+01 |   5.000000e+00 |
+|   1.487500e+01 |   1.871000e+03 |   6.680000e+02 |   2.200000e+01 |   9.000000e+00 |
+|   1.497500e+01 |   1.887000e+03 |   6.730000e+02 |   1.600000e+01 |   5.000000e+00 |
+|   1.500000e+01 |   1.891000e+03 |   6.750000e+02 |   4.000000e+00 |   2.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+
+
+
+
+real	0m28.521s
+user	0m27.531s
+sys	0m0.965s
+
+Penalty:
+Time Step 152, time = 15, dt = 0.1
+
+  Applying predictor with scale factor = 1.00
+ 0 Nonlinear |R| = 1.452358e+03
+      0 Linear |R| = 1.452358e+03
+      1 Linear |R| = 2.344263e+02
+      2 Linear |R| = 5.692579e+01
+      3 Linear |R| = 1.651228e+01
+      4 Linear |R| = 4.744878e+00
+      5 Linear |R| = 2.547612e+00
+      6 Linear |R| = 9.545034e-01
+      7 Linear |R| = 3.037596e-01
+      8 Linear |R| = 8.814458e-02
+      9 Linear |R| = 1.139536e-02
+  Linear solve converged due to CONVERGED_RTOL iterations 9
+ 1 Nonlinear |R| = 6.943794e-01
+      0 Linear |R| = 6.943794e-01
+      1 Linear |R| = 2.176661e-01
+      2 Linear |R| = 7.264671e-02
+      3 Linear |R| = 2.972917e-02
+      4 Linear |R| = 1.105094e-02
+      5 Linear |R| = 5.918267e-03
+      6 Linear |R| = 1.182931e-03
+      7 Linear |R| = 4.342480e-04
+      8 Linear |R| = 4.485307e-05
+      9 Linear |R| = 9.521553e-06
+     10 Linear |R| = 2.398106e-06
+  Linear solve converged due to CONVERGED_RTOL iterations 10
+ 2 Nonlinear |R| = 6.884624e-05
+      0 Linear |R| = 6.884624e-05
+      1 Linear |R| = 2.143886e-05
+      2 Linear |R| = 7.001765e-06
+      3 Linear |R| = 2.861334e-06
+      4 Linear |R| = 1.585363e-06
+      5 Linear |R| = 5.241198e-07
+      6 Linear |R| = 2.017574e-07
+      7 Linear |R| = 2.618117e-08
+      8 Linear |R| = 3.250918e-09
+      9 Linear |R| = 6.151850e-10
+  Linear solve converged due to CONVERGED_RTOL iterations 9
+ 3 Nonlinear |R| = 7.747788e-09
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 3
+ Solve Converged!
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+
+| time           | cum_lin        | cumulative     | lin            | num_nl         |
++----------------+----------------+----------------+----------------+----------------+
+:                :                :                :                :                :
+|   1.365000e+01 |   5.878000e+03 |   5.340000e+02 |   3.000000e+01 |   3.000000e+00 |
+|   1.375000e+01 |   5.907000e+03 |   5.370000e+02 |   2.900000e+01 |   3.000000e+00 |
+|   1.385000e+01 |   5.936000e+03 |   5.400000e+02 |   2.900000e+01 |   3.000000e+00 |
+|   1.395000e+01 |   5.965000e+03 |   5.430000e+02 |   2.900000e+01 |   3.000000e+00 |
+|   1.405000e+01 |   5.995000e+03 |   5.460000e+02 |   3.000000e+01 |   3.000000e+00 |
+|   1.415000e+01 |   6.025000e+03 |   5.490000e+02 |   3.000000e+01 |   3.000000e+00 |
+|   1.425000e+01 |   6.053000e+03 |   5.520000e+02 |   2.800000e+01 |   3.000000e+00 |
+|   1.435000e+01 |   6.099000e+03 |   5.560000e+02 |   4.600000e+01 |   4.000000e+00 |
+|   1.445000e+01 |   6.322000e+03 |   5.730000e+02 |   2.230000e+02 |   1.700000e+01 |
+|   1.455000e+01 |   6.408000e+03 |   5.800000e+02 |   8.600000e+01 |   7.000000e+00 |
+|   1.460000e+01 |   6.472000e+03 |   5.860000e+02 |   6.400000e+01 |   6.000000e+00 |
+|   1.470000e+01 |   6.527000e+03 |   5.910000e+02 |   5.500000e+01 |   5.000000e+00 |
+|   1.480000e+01 |   6.575000e+03 |   5.950000e+02 |   4.800000e+01 |   4.000000e+00 |
+|   1.490000e+01 |   6.613000e+03 |   5.980000e+02 |   3.800000e+01 |   3.000000e+00 |
+|   1.500000e+01 |   6.641000e+03 |   6.010000e+02 |   2.800000e+01 |   3.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+
+
+
+
+real	0m31.693s
+user	0m28.915s
+sys	0m2.754s
+
+The simulations are both faster with a higher friction coefficient, but the qualitative comparison is the same.

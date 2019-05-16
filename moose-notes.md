@@ -10348,3 +10348,113 @@ user	0m28.915s
 sys	0m2.754s
 
 The simulations are both faster with a higher friction coefficient, but the qualitative comparison is the same.
+
+# 5/16/19
+
+Frictionless:
+
+Penalty:
+
+Time Step 163, time = 15, dt = 0.0828125
+
+  Applying predictor with scale factor = 1.00
+ 0 Nonlinear |R| = 5.422040e+02
+      0 Linear |R| = 5.422040e+02
+      1 Linear |R| = 1.000484e-01
+      2 Linear |R| = 6.221353e-05
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 1 Nonlinear |R| = 1.013286e-01
+      0 Linear |R| = 1.013286e-01
+      1 Linear |R| = 8.200092e-06
+      2 Linear |R| = 4.530247e-10
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 2 Nonlinear |R| = 8.327782e-06
+      0 Linear |R| = 8.327782e-06
+      1 Linear |R| = 4.762265e-10
+      2 Linear |R| = 2.566669e-14
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 3 Nonlinear |R| = 2.615231e-09
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 3
+ Solve Converged!
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+
+| time           | cum_lin        | cumulative     | lin            | num_nl         |
++----------------+----------------+----------------+----------------+----------------+
+:                :                :                :                :                :
+|   1.361719e+01 |   1.486000e+03 |   5.160000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.371719e+01 |   1.493000e+03 |   5.190000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.381719e+01 |   1.500000e+03 |   5.220000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.391719e+01 |   1.507000e+03 |   5.250000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.401719e+01 |   1.514000e+03 |   5.280000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.411719e+01 |   1.521000e+03 |   5.310000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.421719e+01 |   1.527000e+03 |   5.340000e+02 |   6.000000e+00 |   3.000000e+00 |
+|   1.431719e+01 |   1.533000e+03 |   5.370000e+02 |   6.000000e+00 |   3.000000e+00 |
+|   1.441719e+01 |   1.550000e+03 |   5.410000e+02 |   1.700000e+01 |   4.000000e+00 |
+|   1.451719e+01 |   1.566000e+03 |   5.450000e+02 |   1.600000e+01 |   4.000000e+00 |
+|   1.461719e+01 |   1.596000e+03 |   5.530000e+02 |   3.000000e+01 |   8.000000e+00 |
+|   1.471719e+01 |   1.603000e+03 |   5.560000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.481719e+01 |   1.610000e+03 |   5.590000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.491719e+01 |   1.617000e+03 |   5.620000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.500000e+01 |   1.623000e+03 |   5.650000e+02 |   6.000000e+00 |   3.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+
+
+
+
+real	0m28.759s
+user	0m26.493s
+sys	0m2.242s
+
+Mortar LM:
+
+Time Step 171, time = 15, dt = 0.05
+
+  Applying predictor with scale factor = 1.00
+ 0 Nonlinear |R| = 2.622077e+02
+      0 Linear |R| = 2.622077e+02
+      1 Linear |R| = 2.567511e-02
+      2 Linear |R| = 6.940827e-06
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 1 Nonlinear |R| = 2.601341e-02
+      0 Linear |R| = 2.601341e-02
+      1 Linear |R| = 2.095483e-06
+      2 Linear |R| = 1.154227e-10
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 2 Nonlinear |R| = 2.127258e-06
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 2
+ Solve Converged!
+
+Outlier Variable Residual Norms:
+  disp_y: 1.932039e-06
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+
+| time           | cum_lin        | cumulative     | lin            | num_nl         |
++----------------+----------------+----------------+----------------+----------------+
+:                :                :                :                :                :
+|   1.375000e+01 |   1.578000e+03 |   6.010000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.385000e+01 |   1.585000e+03 |   6.040000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.395000e+01 |   1.592000e+03 |   6.070000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.405000e+01 |   1.599000e+03 |   6.100000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.415000e+01 |   1.606000e+03 |   6.130000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.425000e+01 |   1.612000e+03 |   6.160000e+02 |   6.000000e+00 |   3.000000e+00 |
+|   1.435000e+01 |   1.620000e+03 |   6.190000e+02 |   8.000000e+00 |   3.000000e+00 |
+|   1.445000e+01 |   1.662000e+03 |   6.240000e+02 |   4.200000e+01 |   5.000000e+00 |
+|   1.455000e+01 |   1.672000e+03 |   6.270000e+02 |   1.000000e+01 |   3.000000e+00 |
+|   1.465000e+01 |   1.681000e+03 |   6.300000e+02 |   9.000000e+00 |   3.000000e+00 |
+|   1.470000e+01 |   1.689000e+03 |   6.330000e+02 |   8.000000e+00 |   3.000000e+00 |
+|   1.475000e+01 |   1.703000e+03 |   6.390000e+02 |   1.400000e+01 |   6.000000e+00 |
+|   1.485000e+01 |   1.721000e+03 |   6.470000e+02 |   1.800000e+01 |   8.000000e+00 |
+|   1.495000e+01 |   1.727000e+03 |   6.500000e+02 |   6.000000e+00 |   3.000000e+00 |
+|   1.500000e+01 |   1.731000e+03 |   6.520000e+02 |   4.000000e+00 |   2.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+
+
+
+
+real	0m36.955s
+user	0m35.294s
+sys	0m1.622s
+
+Ok, it looks like for frictionless, penalty performs in a superior fashion to mortar LM, in simulation time,
+number of time steps to reach end_time, linear iterations, and non-linear iterations. That is disappointing.
+But it is motivation to explore improvement of the mortar formulation!

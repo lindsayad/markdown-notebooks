@@ -10458,3 +10458,906 @@ sys	0m1.622s
 Ok, it looks like for frictionless, penalty performs in a superior fashion to mortar LM, in simulation time,
 number of time steps to reach end_time, linear iterations, and non-linear iterations. That is disappointing.
 But it is motivation to explore improvement of the mortar formulation!
+
+# 5/23/19
+
+## This is using the MOOSE bouncing basketball test case
+
+Mortar enforcment of constraints, normal contact only, constant monomial for LM variable, fisher burmeister function for NCP:
+
+Time Step 40, time = 200, dt = 5
+
+ 0 Nonlinear |R| = 2.554330e-01
+    |residual|_2 of individual variables:
+                  disp_x:    0.165831
+                  disp_y:    0.194283
+                  normal_lm: 4.63713e-14
+
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 2.554330e-01
+      1 Linear |R| = 2.601128e-11
+  Linear solve converged due to CONVERGED_RTOL iterations 1
+ 1 Nonlinear |R| = 2.088136e-12
+    |residual|_2 of individual variables:
+                  disp_x:    1.35579e-12
+                  disp_y:    1.58813e-12
+                  normal_lm: 2.55894e-17
+
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 1
+ Solve Converged!
+
+The number of nodes in contact is 0
+
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+
+| time           | contact        | cumulative     | num_nl         |
++----------------+----------------+----------------+----------------+
+:                :                :                :                :
+|   1.300000e+02 |   0.000000e+00 |   8.400000e+01 |   1.000000e+00 |
+|   1.350000e+02 |   1.000000e+01 |   9.000000e+01 |   6.000000e+00 |
+|   1.400000e+02 |   1.000000e+01 |   9.700000e+01 |   7.000000e+00 |
+|   1.450000e+02 |   1.000000e+01 |   1.010000e+02 |   4.000000e+00 |
+|   1.500000e+02 |   0.000000e+00 |   1.090000e+02 |   8.000000e+00 |
+|   1.550000e+02 |   0.000000e+00 |   1.100000e+02 |   1.000000e+00 |
+|   1.600000e+02 |   0.000000e+00 |   1.110000e+02 |   1.000000e+00 |
+|   1.650000e+02 |   0.000000e+00 |   1.120000e+02 |   1.000000e+00 |
+|   1.700000e+02 |   0.000000e+00 |   1.130000e+02 |   1.000000e+00 |
+|   1.750000e+02 |   1.000000e+01 |   1.190000e+02 |   6.000000e+00 |
+|   1.800000e+02 |   1.000000e+01 |   1.230000e+02 |   4.000000e+00 |
+|   1.850000e+02 |   1.000000e+01 |   1.270000e+02 |   4.000000e+00 |
+|   1.900000e+02 |   0.000000e+00 |   1.340000e+02 |   7.000000e+00 |
+|   1.950000e+02 |   0.000000e+00 |   1.350000e+02 |   1.000000e+00 |
+|   2.000000e+02 |   0.000000e+00 |   1.360000e+02 |   1.000000e+00 |
++----------------+----------------+----------------+----------------+
+
+Nodal enforcment of constraints, normal contact only, first order lagrange for LM variable, min function for NCP:
+
+Time Step 40, time = 200, dt = 5
+
+ 0 Nonlinear |R| = 2.554330e-01
+    |residual|_2 of individual variables:
+                  disp_x:    0.165831
+                  disp_y:    0.194283
+                  normal_lm: 1.0564e-31
+
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 2.554330e-01
+      1 Linear |R| = 3.253167e-11
+  Linear solve converged due to CONVERGED_RTOL iterations 1
+ 1 Nonlinear |R| = 3.208178e-12
+    |residual|_2 of individual variables:
+                  disp_x:    2.08265e-12
+                  disp_y:    2.44028e-12
+                  normal_lm: 1.3269e-42
+
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 1
+ Solve Converged!
+
+The number of nodes in contact is 0
+
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+
+| time           | contact        | cumulative     | num_nl         |
++----------------+----------------+----------------+----------------+
+:                :                :                :                :
+|   1.300000e+02 |   0.000000e+00 |   6.500000e+01 |   1.000000e+00 |
+|   1.350000e+02 |   1.100000e+01 |   6.900000e+01 |   4.000000e+00 |
+|   1.400000e+02 |   1.100000e+01 |   7.300000e+01 |   4.000000e+00 |
+|   1.450000e+02 |   1.100000e+01 |   7.800000e+01 |   5.000000e+00 |
+|   1.500000e+02 |   0.000000e+00 |   8.200000e+01 |   4.000000e+00 |
+|   1.550000e+02 |   0.000000e+00 |   8.300000e+01 |   1.000000e+00 |
+|   1.600000e+02 |   0.000000e+00 |   8.400000e+01 |   1.000000e+00 |
+|   1.650000e+02 |   0.000000e+00 |   8.500000e+01 |   1.000000e+00 |
+|   1.700000e+02 |   0.000000e+00 |   8.600000e+01 |   1.000000e+00 |
+|   1.750000e+02 |   1.100000e+01 |   9.000000e+01 |   4.000000e+00 |
+|   1.800000e+02 |   1.100000e+01 |   9.400000e+01 |   4.000000e+00 |
+|   1.850000e+02 |   1.100000e+01 |   9.800000e+01 |   4.000000e+00 |
+|   1.900000e+02 |   0.000000e+00 |   1.020000e+02 |   4.000000e+00 |
+|   1.950000e+02 |   0.000000e+00 |   1.030000e+02 |   1.000000e+00 |
+|   2.000000e+02 |   0.000000e+00 |   1.040000e+02 |   1.000000e+00 |
++----------------+----------------+----------------+----------------+
+
+The performance in terms of non-linear iterations for the latter is much better!!!
+
+## This is using the combined sliding-block test case
+
+Mortar constraint enforcement, fisher burmeister NCP function, constant monomial, normal contact only
+
+Time Step 170, time = 15, dt = 0.1
+
+  Applying predictor with scale factor = 1.00
+ 0 Nonlinear |R| = 1.452358e+03
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 1.452358e+03
+      1 Linear |R| = 6.767367e-01
+      2 Linear |R| = 1.090533e-03
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 1 Nonlinear |R| = 6.851066e-01
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 6.851066e-01
+      1 Linear |R| = 5.596217e-05
+      2 Linear |R| = 3.032399e-09
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 2 Nonlinear |R| = 5.702927e-05
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 5.702927e-05
+      1 Linear |R| = 3.260235e-09
+      2 Linear |R| = 1.754854e-13
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 3 Nonlinear |R| = 7.061821e-09
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 3
+ Solve Converged!
+
+The number of nodes in contact is 0
+
+
+Outlier Variable Residual Norms:
+  disp_y: 6.272339e-09
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+----------------+
+| time           | contact        | cum_lin        | cumulative     | lin            | num_nl         |
++----------------+----------------+----------------+----------------+----------------+----------------+
+:                :                :                :                :                :                :
+|   1.385000e+01 |   0.000000e+00 |   1.514000e+03 |   5.680000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.395000e+01 |   0.000000e+00 |   1.521000e+03 |   5.710000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.400000e+01 |   0.000000e+00 |   1.527000e+03 |   5.740000e+02 |   6.000000e+00 |   3.000000e+00 |
+|   1.410000e+01 |   0.000000e+00 |   1.534000e+03 |   5.770000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.420000e+01 |   0.000000e+00 |   1.540000e+03 |   5.800000e+02 |   6.000000e+00 |   3.000000e+00 |
+|   1.430000e+01 |   0.000000e+00 |   1.546000e+03 |   5.830000e+02 |   6.000000e+00 |   3.000000e+00 |
+|   1.440000e+01 |   4.000000e+00 |   1.581000e+03 |   5.900000e+02 |   3.500000e+01 |   7.000000e+00 |
+|   1.450000e+01 |   4.000000e+00 |   1.591000e+03 |   5.930000e+02 |   1.000000e+01 |   3.000000e+00 |
+|   1.460000e+01 |   4.000000e+00 |   1.601000e+03 |   5.960000e+02 |   1.000000e+01 |   3.000000e+00 |
+|   1.470000e+01 |   4.000000e+00 |   1.609000e+03 |   5.990000e+02 |   8.000000e+00 |   3.000000e+00 |
+|   1.472500e+01 |   0.000000e+00 |   1.633000e+03 |   6.090000e+02 |   2.400000e+01 |   1.000000e+01 |
+|   1.475000e+01 |   0.000000e+00 |   1.644000e+03 |   6.140000e+02 |   1.100000e+01 |   5.000000e+00 |
+|   1.480000e+01 |   0.000000e+00 |   1.649000e+03 |   6.170000e+02 |   5.000000e+00 |   3.000000e+00 |
+|   1.490000e+01 |   0.000000e+00 |   1.655000e+03 |   6.200000e+02 |   6.000000e+00 |   3.000000e+00 |
+|   1.500000e+01 |   0.000000e+00 |   1.661000e+03 |   6.230000e+02 |   6.000000e+00 |   3.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+----------------+
+
+nodal constraint enforcement, min NCP function, first order lagrange LM, normal contact only, c = 1, no predictor
+
+Time Step 150, time = 15, dt = 0.1
+
+ 0 Nonlinear |R| = 8.532847e+04
+    |residual|_2 of individual variables:
+                  disp_x:    45379.3
+                  disp_y:    72261.1
+                  normal_lm: 2.90071e-50
+
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 8.532847e+04
+      1 Linear |R| = 1.401280e+04
+      2 Linear |R| = 1.624036e+03
+      3 Linear |R| = 2.931746e+02
+      4 Linear |R| = 5.888725e+01
+      5 Linear |R| = 7.866887e+00
+      6 Linear |R| = 8.391418e-01
+  Linear solve converged due to CONVERGED_RTOL iterations 6
+ 1 Nonlinear |R| = 1.447069e+04
+    |residual|_2 of individual variables:
+                  disp_x:    6311.13
+                  disp_y:    13021.9
+                  normal_lm: 1.20327e-55
+
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 1.447069e+04
+      1 Linear |R| = 1.168672e+03
+      2 Linear |R| = 3.683289e+01
+      3 Linear |R| = 8.608469e-01
+      4 Linear |R| = 2.164551e-02
+  Linear solve converged due to CONVERGED_RTOL iterations 4
+ 2 Nonlinear |R| = 3.002274e+02
+    |residual|_2 of individual variables:
+                  disp_x:    176.582
+                  disp_y:    242.807
+                  normal_lm: 6.96408e-62
+
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 3.002274e+02
+      1 Linear |R| = 9.617122e-01
+      2 Linear |R| = 8.609730e-04
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 3 Nonlinear |R| = 3.213526e-01
+    |residual|_2 of individual variables:
+                  disp_x:    0.276765
+                  disp_y:    0.163305
+                  normal_lm: 1.08538e-67
+
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 3.213526e-01
+      1 Linear |R| = 2.873472e-05
+      2 Linear |R| = 9.390919e-10
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 4 Nonlinear |R| = 2.918894e-05
+    |residual|_2 of individual variables:
+                  disp_x:    2.75354e-05
+                  disp_y:    9.68474e-06
+                  normal_lm: 1.93434e-76
+
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 4
+ Solve Converged!
+
+The number of nodes in contact is 0
+
+
+Outlier Variable Residual Norms:
+  disp_x: 2.753543e-05
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+----------------+
+| time           | contact        | cum_lin        | cumulative     | lin            | num_nl         |
++----------------+----------------+----------------+----------------+----------------+----------------+
+:                :                :                :                :                :                :
+|   1.360000e+01 |   0.000000e+00 |   2.066000e+03 |   5.510000e+02 |   1.400000e+01 |   4.000000e+00 |
+|   1.370000e+01 |   0.000000e+00 |   2.081000e+03 |   5.550000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.380000e+01 |   0.000000e+00 |   2.096000e+03 |   5.590000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.390000e+01 |   0.000000e+00 |   2.111000e+03 |   5.630000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.400000e+01 |   0.000000e+00 |   2.126000e+03 |   5.670000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.410000e+01 |   0.000000e+00 |   2.141000e+03 |   5.710000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.420000e+01 |   0.000000e+00 |   2.156000e+03 |   5.750000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.430000e+01 |   0.000000e+00 |   2.174000e+03 |   5.800000e+02 |   1.800000e+01 |   5.000000e+00 |
+|   1.440000e+01 |   5.000000e+00 |   2.191000e+03 |   5.840000e+02 |   1.700000e+01 |   4.000000e+00 |
+|   1.450000e+01 |   5.000000e+00 |   2.208000e+03 |   5.880000e+02 |   1.700000e+01 |   4.000000e+00 |
+|   1.460000e+01 |   5.000000e+00 |   2.225000e+03 |   5.920000e+02 |   1.700000e+01 |   4.000000e+00 |
+|   1.470000e+01 |   5.000000e+00 |   2.239000e+03 |   5.960000e+02 |   1.400000e+01 |   4.000000e+00 |
+|   1.480000e+01 |   0.000000e+00 |   2.256000e+03 |   6.010000e+02 |   1.700000e+01 |   5.000000e+00 |
+|   1.490000e+01 |   0.000000e+00 |   2.270000e+03 |   6.050000e+02 |   1.400000e+01 |   4.000000e+00 |
+|   1.500000e+01 |   0.000000e+00 |   2.284000e+03 |   6.090000e+02 |   1.400000e+01 |   4.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+----------------+
+
+Vastly superior convergence properties!
+
+nodal constraint enforcement, min NCP function, first order lagrange LM, normal contact only, c = 1, with predictor:
+
+Time Step 150, time = 15, dt = 0.1
+
+  Applying predictor with scale factor = 1.00
+ 0 Nonlinear |R| = 1.452358e+03
+    |residual|_2 of individual variables:
+                  disp_x:    1433.57
+                  disp_y:    232.877
+                  normal_lm: 8.56089e-22
+
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 1.452358e+03
+      1 Linear |R| = 6.767368e-01
+      2 Linear |R| = 1.090533e-03
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 1 Nonlinear |R| = 6.851066e-01
+    |residual|_2 of individual variables:
+                  disp_x:    0.00154564
+                  disp_y:    0.685105
+                  normal_lm: 3.07708e-28
+
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 6.851066e-01
+      1 Linear |R| = 5.596217e-05
+      2 Linear |R| = 3.032400e-09
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 2 Nonlinear |R| = 5.702852e-05
+    |residual|_2 of individual variables:
+                  disp_x:    2.3821e-05
+                  disp_y:    5.18152e-05
+                  normal_lm: 8.74241e-37
+
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 5.702852e-05
+      1 Linear |R| = 3.260270e-09
+      2 Linear |R| = 1.755045e-13
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 3 Nonlinear |R| = 5.223674e-09
+    |residual|_2 of individual variables:
+                  disp_x:    2.38331e-09
+                  disp_y:    4.64829e-09
+                  normal_lm: 2.03666e-45
+
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 3
+ Solve Converged!
+
+The number of nodes in contact is 0
+
+
+Outlier Variable Residual Norms:
+  disp_y: 4.648289e-09
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+----------------+
+| time           | contact        | cum_lin        | cumulative     | lin            | num_nl         |
++----------------+----------------+----------------+----------------+----------------+----------------+
+:                :                :                :                :                :                :
+|   1.360000e+01 |   0.000000e+00 |   9.810000e+02 |   4.070000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.370000e+01 |   0.000000e+00 |   9.880000e+02 |   4.100000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.380000e+01 |   0.000000e+00 |   9.950000e+02 |   4.130000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.390000e+01 |   0.000000e+00 |   1.002000e+03 |   4.160000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.400000e+01 |   0.000000e+00 |   1.009000e+03 |   4.190000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.410000e+01 |   0.000000e+00 |   1.016000e+03 |   4.220000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.420000e+01 |   0.000000e+00 |   1.022000e+03 |   4.250000e+02 |   6.000000e+00 |   3.000000e+00 |
+|   1.430000e+01 |   0.000000e+00 |   1.028000e+03 |   4.280000e+02 |   6.000000e+00 |   3.000000e+00 |
+|   1.440000e+01 |   5.000000e+00 |   1.037000e+03 |   4.310000e+02 |   9.000000e+00 |   3.000000e+00 |
+|   1.450000e+01 |   5.000000e+00 |   1.046000e+03 |   4.340000e+02 |   9.000000e+00 |   3.000000e+00 |
+|   1.460000e+01 |   5.000000e+00 |   1.055000e+03 |   4.370000e+02 |   9.000000e+00 |   3.000000e+00 |
+|   1.470000e+01 |   5.000000e+00 |   1.062000e+03 |   4.400000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.480000e+01 |   0.000000e+00 |   1.069000e+03 |   4.430000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.490000e+01 |   0.000000e+00 |   1.076000e+03 |   4.460000e+02 |   7.000000e+00 |   3.000000e+00 |
+|   1.500000e+01 |   0.000000e+00 |   1.082000e+03 |   4.490000e+02 |   6.000000e+00 |   3.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+----------------+
+
+With kyle solve options:
+
+penalty:
+
+Time Step 151, time = 15, dt = 3.73035e-14
+
+  Applying predictor with scale factor = 1.00
+ 0 Nonlinear |R| = 3.903592e-09
+ Solve Converged!
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+
+| time           | cum_lin        | cumulative     | lin            | num_nl         |
++----------------+----------------+----------------+----------------+----------------+
+:                :                :                :                :                :
+|   1.360000e+01 |   5.180000e+02 |   4.300000e+02 |   2.000000e+00 |   2.000000e+00 |
+|   1.370000e+01 |   5.220000e+02 |   4.330000e+02 |   4.000000e+00 |   3.000000e+00 |
+|   1.380000e+01 |   5.260000e+02 |   4.360000e+02 |   4.000000e+00 |   3.000000e+00 |
+|   1.390000e+01 |   5.300000e+02 |   4.390000e+02 |   4.000000e+00 |   3.000000e+00 |
+|   1.400000e+01 |   5.340000e+02 |   4.420000e+02 |   4.000000e+00 |   3.000000e+00 |
+|   1.410000e+01 |   5.360000e+02 |   4.440000e+02 |   2.000000e+00 |   2.000000e+00 |
+|   1.420000e+01 |   5.380000e+02 |   4.460000e+02 |   2.000000e+00 |   2.000000e+00 |
+|   1.430000e+01 |   5.400000e+02 |   4.480000e+02 |   2.000000e+00 |   2.000000e+00 |
+|   1.440000e+01 |   5.440000e+02 |   4.510000e+02 |   4.000000e+00 |   3.000000e+00 |
+|   1.450000e+01 |   5.530000e+02 |   4.550000e+02 |   9.000000e+00 |   4.000000e+00 |
+|   1.460000e+01 |   5.600000e+02 |   4.620000e+02 |   7.000000e+00 |   7.000000e+00 |
+|   1.470000e+01 |   5.650000e+02 |   4.670000e+02 |   5.000000e+00 |   5.000000e+00 |
+|   1.480000e+01 |   5.690000e+02 |   4.710000e+02 |   4.000000e+00 |   4.000000e+00 |
+|   1.490000e+01 |   5.730000e+02 |   4.740000e+02 |   4.000000e+00 |   3.000000e+00 |
+|   1.500000e+01 |   5.750000e+02 |   4.760000e+02 |   0.000000e+00 |   0.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+
+
+
+
+real	0m15.644s
+user	0m14.316s
+sys	0m1.306s
+
+LM with nodal:
+
+Time Step 151, time = 15, dt = 3.73035e-14
+
+  Applying predictor with scale factor = 1.00
+ 0 Nonlinear |R| = 1.102481e-09
+    |residual|_2 of individual variables:
+                  disp_x:    7.28708e-10
+                  disp_y:    8.27314e-10
+                  normal_lm: 1.11574e-18
+
+ Solve Converged!
+
+The number of nodes in contact is 0
+
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+----------------+
+| time           | contact        | cum_lin        | cumulative     | lin            | num_nl         |
++----------------+----------------+----------------+----------------+----------------+----------------+
+:                :                :                :                :                :                :
+|   1.360000e+01 |   0.000000e+00 |   1.169000e+03 |   4.640000e+02 |   2.000000e+00 |   2.000000e+00 |
+|   1.370000e+01 |   0.000000e+00 |   1.173000e+03 |   4.670000e+02 |   4.000000e+00 |   3.000000e+00 |
+|   1.380000e+01 |   0.000000e+00 |   1.177000e+03 |   4.700000e+02 |   4.000000e+00 |   3.000000e+00 |
+|   1.390000e+01 |   0.000000e+00 |   1.181000e+03 |   4.730000e+02 |   4.000000e+00 |   3.000000e+00 |
+|   1.400000e+01 |   0.000000e+00 |   1.185000e+03 |   4.760000e+02 |   4.000000e+00 |   3.000000e+00 |
+|   1.410000e+01 |   0.000000e+00 |   1.187000e+03 |   4.780000e+02 |   2.000000e+00 |   2.000000e+00 |
+|   1.420000e+01 |   0.000000e+00 |   1.189000e+03 |   4.800000e+02 |   2.000000e+00 |   2.000000e+00 |
+|   1.430000e+01 |   0.000000e+00 |   1.191000e+03 |   4.820000e+02 |   2.000000e+00 |   2.000000e+00 |
+|   1.440000e+01 |   5.000000e+00 |   1.200000e+03 |   4.870000e+02 |   9.000000e+00 |   5.000000e+00 |
+|   1.450000e+01 |   5.000000e+00 |   1.208000e+03 |   4.920000e+02 |   8.000000e+00 |   5.000000e+00 |
+|   1.460000e+01 |   5.000000e+00 |   1.217000e+03 |   4.970000e+02 |   9.000000e+00 |   5.000000e+00 |
+|   1.470000e+01 |   5.000000e+00 |   1.226000e+03 |   5.020000e+02 |   9.000000e+00 |   5.000000e+00 |
+|   1.480000e+01 |   0.000000e+00 |   1.301000e+03 |   5.080000e+02 |   7.500000e+01 |   6.000000e+00 |
+|   1.490000e+01 |   0.000000e+00 |   1.306000e+03 |   5.120000e+02 |   5.000000e+00 |   4.000000e+00 |
+|   1.500000e+01 |   0.000000e+00 |   1.308000e+03 |   5.140000e+02 |   0.000000e+00 |   0.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+----------------+
+
+
+
+real	0m30.831s
+user	0m29.414s
+sys	0m1.383s
+
+With my solve options:
+
+Penalty:
+
+Time Step 160, time = 15, dt = 0.1
+
+ 0 Nonlinear |R| = 8.532847e+04
+      0 Linear |R| = 8.532847e+04
+      1 Linear |R| = 1.401280e+04
+      2 Linear |R| = 1.624036e+03
+      3 Linear |R| = 2.931746e+02
+      4 Linear |R| = 5.888725e+01
+      5 Linear |R| = 7.866887e+00
+      6 Linear |R| = 8.391418e-01
+  Linear solve converged due to CONVERGED_RTOL iterations 6
+ 1 Nonlinear |R| = 1.447069e+04
+      0 Linear |R| = 1.447069e+04
+      1 Linear |R| = 1.168671e+03
+      2 Linear |R| = 3.683289e+01
+      3 Linear |R| = 8.608469e-01
+      4 Linear |R| = 2.164551e-02
+  Linear solve converged due to CONVERGED_RTOL iterations 4
+ 2 Nonlinear |R| = 3.002274e+02
+      0 Linear |R| = 3.002274e+02
+      1 Linear |R| = 9.617122e-01
+      2 Linear |R| = 8.609730e-04
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 3 Nonlinear |R| = 3.213525e-01
+      0 Linear |R| = 3.213525e-01
+      1 Linear |R| = 2.873472e-05
+      2 Linear |R| = 9.390889e-10
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 4 Nonlinear |R| = 2.918914e-05
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 4
+ Solve Converged!
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+
+| time           | cum_lin        | cumulative     | lin            | num_nl         |
++----------------+----------------+----------------+----------------+----------------+
+:                :                :                :                :                :
+|   1.372500e+01 |   2.775000e+03 |   6.660000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.382500e+01 |   2.790000e+03 |   6.700000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.392500e+01 |   2.805000e+03 |   6.740000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.402500e+01 |   2.820000e+03 |   6.780000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.412500e+01 |   2.835000e+03 |   6.820000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.422500e+01 |   2.850000e+03 |   6.860000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.432500e+01 |   2.868000e+03 |   6.900000e+02 |   1.800000e+01 |   4.000000e+00 |
+|   1.442500e+01 |   2.893000e+03 |   6.950000e+02 |   2.500000e+01 |   5.000000e+00 |
+|   1.445000e+01 |   2.906000e+03 |   6.990000e+02 |   1.300000e+01 |   4.000000e+00 |
+|   1.450000e+01 |   2.942000e+03 |   7.080000e+02 |   3.600000e+01 |   9.000000e+00 |
+|   1.460000e+01 |   2.964000e+03 |   7.130000e+02 |   2.200000e+01 |   5.000000e+00 |
+|   1.470000e+01 |   2.981000e+03 |   7.180000e+02 |   1.700000e+01 |   5.000000e+00 |
+|   1.480000e+01 |   2.999000e+03 |   7.230000e+02 |   1.800000e+01 |   5.000000e+00 |
+|   1.490000e+01 |   3.013000e+03 |   7.270000e+02 |   1.400000e+01 |   4.000000e+00 |
+|   1.500000e+01 |   3.027000e+03 |   7.310000e+02 |   1.400000e+01 |   4.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+
+
+
+
+real	0m45.600s
+user	0m42.737s
+sys	0m2.838s
+
+LM with nodal, min ncp function, no predictor:
+
+Time Step 150, time = 15, dt = 0.1
+
+ 0 Nonlinear |R| = 8.532847e+04
+    |residual|_2 of individual variables:
+                  disp_x:    45379.3
+                  disp_y:    72261.1
+                  normal_lm: 2.90071e-50
+
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 8.532847e+04
+      1 Linear |R| = 1.401280e+04
+      2 Linear |R| = 1.624036e+03
+      3 Linear |R| = 2.931746e+02
+      4 Linear |R| = 5.888725e+01
+      5 Linear |R| = 7.866887e+00
+      6 Linear |R| = 8.391418e-01
+  Linear solve converged due to CONVERGED_RTOL iterations 6
+ 1 Nonlinear |R| = 1.447069e+04
+    |residual|_2 of individual variables:
+                  disp_x:    6311.13
+                  disp_y:    13021.9
+                  normal_lm: 1.20327e-55
+
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 1.447069e+04
+      1 Linear |R| = 1.168672e+03
+      2 Linear |R| = 3.683289e+01
+      3 Linear |R| = 8.608469e-01
+      4 Linear |R| = 2.164551e-02
+  Linear solve converged due to CONVERGED_RTOL iterations 4
+ 2 Nonlinear |R| = 3.002274e+02
+    |residual|_2 of individual variables:
+                  disp_x:    176.582
+                  disp_y:    242.807
+                  normal_lm: 6.96408e-62
+
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 3.002274e+02
+      1 Linear |R| = 9.617122e-01
+      2 Linear |R| = 8.609730e-04
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 3 Nonlinear |R| = 3.213526e-01
+    |residual|_2 of individual variables:
+                  disp_x:    0.276765
+                  disp_y:    0.163305
+                  normal_lm: 1.08538e-67
+
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 3.213526e-01
+      1 Linear |R| = 2.873472e-05
+      2 Linear |R| = 9.390919e-10
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 4 Nonlinear |R| = 2.918894e-05
+    |residual|_2 of individual variables:
+                  disp_x:    2.75354e-05
+                  disp_y:    9.68474e-06
+                  normal_lm: 1.93434e-76
+
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 4
+ Solve Converged!
+
+The number of nodes in contact is 0
+
+
+Outlier Variable Residual Norms:
+  disp_x: 2.753543e-05
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+----------------+
+| time           | contact        | cum_lin        | cumulative     | lin            | num_nl         |
++----------------+----------------+----------------+----------------+----------------+----------------+
+:                :                :                :                :                :                :
+|   1.360000e+01 |   0.000000e+00 |   2.066000e+03 |   5.510000e+02 |   1.400000e+01 |   4.000000e+00 |
+|   1.370000e+01 |   0.000000e+00 |   2.081000e+03 |   5.550000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.380000e+01 |   0.000000e+00 |   2.096000e+03 |   5.590000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.390000e+01 |   0.000000e+00 |   2.111000e+03 |   5.630000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.400000e+01 |   0.000000e+00 |   2.126000e+03 |   5.670000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.410000e+01 |   0.000000e+00 |   2.141000e+03 |   5.710000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.420000e+01 |   0.000000e+00 |   2.156000e+03 |   5.750000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.430000e+01 |   0.000000e+00 |   2.174000e+03 |   5.800000e+02 |   1.800000e+01 |   5.000000e+00 |
+|   1.440000e+01 |   5.000000e+00 |   2.191000e+03 |   5.840000e+02 |   1.700000e+01 |   4.000000e+00 |
+|   1.450000e+01 |   5.000000e+00 |   2.208000e+03 |   5.880000e+02 |   1.700000e+01 |   4.000000e+00 |
+|   1.460000e+01 |   5.000000e+00 |   2.225000e+03 |   5.920000e+02 |   1.700000e+01 |   4.000000e+00 |
+|   1.470000e+01 |   5.000000e+00 |   2.239000e+03 |   5.960000e+02 |   1.400000e+01 |   4.000000e+00 |
+|   1.480000e+01 |   0.000000e+00 |   2.256000e+03 |   6.010000e+02 |   1.700000e+01 |   5.000000e+00 |
+|   1.490000e+01 |   0.000000e+00 |   2.270000e+03 |   6.050000e+02 |   1.400000e+01 |   4.000000e+00 |
+|   1.500000e+01 |   0.000000e+00 |   2.284000e+03 |   6.090000e+02 |   1.400000e+01 |   4.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+----------------+
+
+
+
+real	0m37.653s
+user	0m36.249s
+sys	0m1.373s
+
+LM with nodal, FB ncp function, no predictor:
+
+Time Step 150, time = 15, dt = 0.1
+
+ 0 Nonlinear |R| = 8.532847e+04
+    |residual|_2 of individual variables:
+                  disp_x:    45379.3
+                  disp_y:    72261.1
+                  normal_lm: 0
+
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 8.532847e+04
+      1 Linear |R| = 1.401280e+04
+      2 Linear |R| = 1.624036e+03
+      3 Linear |R| = 2.931746e+02
+      4 Linear |R| = 5.888725e+01
+      5 Linear |R| = 7.866887e+00
+      6 Linear |R| = 8.391418e-01
+  Linear solve converged due to CONVERGED_RTOL iterations 6
+ 1 Nonlinear |R| = 1.447069e+04
+    |residual|_2 of individual variables:
+                  disp_x:    6311.13
+                  disp_y:    13021.9
+                  normal_lm: 0
+
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 1.447069e+04
+      1 Linear |R| = 1.168671e+03
+      2 Linear |R| = 3.683289e+01
+      3 Linear |R| = 8.608469e-01
+      4 Linear |R| = 2.164551e-02
+  Linear solve converged due to CONVERGED_RTOL iterations 4
+ 2 Nonlinear |R| = 3.002274e+02
+    |residual|_2 of individual variables:
+                  disp_x:    176.582
+                  disp_y:    242.807
+                  normal_lm: 0
+
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 3.002274e+02
+      1 Linear |R| = 9.617122e-01
+      2 Linear |R| = 8.609729e-04
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 3 Nonlinear |R| = 3.213526e-01
+    |residual|_2 of individual variables:
+                  disp_x:    0.276765
+                  disp_y:    0.163305
+                  normal_lm: 0
+
+
+The number of nodes in contact is 0
+
+      0 Linear |R| = 3.213526e-01
+      1 Linear |R| = 2.873472e-05
+      2 Linear |R| = 9.390887e-10
+  Linear solve converged due to CONVERGED_RTOL iterations 2
+ 4 Nonlinear |R| = 2.918934e-05
+    |residual|_2 of individual variables:
+                  disp_x:    2.75358e-05
+                  disp_y:    9.68498e-06
+                  normal_lm: 0
+
+Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 4
+ Solve Converged!
+
+The number of nodes in contact is 0
+
+
+Outlier Variable Residual Norms:
+  disp_x: 2.753577e-05
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+----------------+
+| time           | contact        | cum_lin        | cumulative     | lin            | num_nl         |
++----------------+----------------+----------------+----------------+----------------+----------------+
+:                :                :                :                :                :                :
+|   1.360000e+01 |   0.000000e+00 |   2.255000e+03 |   5.920000e+02 |   1.400000e+01 |   4.000000e+00 |
+|   1.370000e+01 |   0.000000e+00 |   2.270000e+03 |   5.960000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.380000e+01 |   0.000000e+00 |   2.285000e+03 |   6.000000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.390000e+01 |   0.000000e+00 |   2.300000e+03 |   6.040000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.400000e+01 |   0.000000e+00 |   2.315000e+03 |   6.080000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.410000e+01 |   0.000000e+00 |   2.330000e+03 |   6.120000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.420000e+01 |   0.000000e+00 |   2.345000e+03 |   6.160000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.430000e+01 |   0.000000e+00 |   2.360000e+03 |   6.200000e+02 |   1.500000e+01 |   4.000000e+00 |
+|   1.440000e+01 |   5.000000e+00 |   2.391000e+03 |   6.270000e+02 |   3.100000e+01 |   7.000000e+00 |
+|   1.450000e+01 |   5.000000e+00 |   2.409000e+03 |   6.310000e+02 |   1.800000e+01 |   4.000000e+00 |
+|   1.460000e+01 |   5.000000e+00 |   2.426000e+03 |   6.350000e+02 |   1.700000e+01 |   4.000000e+00 |
+|   1.470000e+01 |   5.000000e+00 |   2.440000e+03 |   6.390000e+02 |   1.400000e+01 |   4.000000e+00 |
+|   1.480000e+01 |   0.000000e+00 |   2.456000e+03 |   6.440000e+02 |   1.600000e+01 |   5.000000e+00 |
+|   1.490000e+01 |   0.000000e+00 |   2.470000e+03 |   6.480000e+02 |   1.400000e+01 |   4.000000e+00 |
+|   1.500000e+01 |   0.000000e+00 |   2.484000e+03 |   6.520000e+02 |   1.400000e+01 |   4.000000e+00 |
++----------------+----------------+----------------+----------------+----------------+----------------+
+
+
+
+real	0m38.925s
+user	0m37.458s
+sys	0m1.395s
+
+### Ok, back to moose test:
+
+nodal constraint, frictionless, min NCP:
+
+Time Step 40, time = 200, dt = 5
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+
+| time           | contact        | cumulative     | num_nl         |
++----------------+----------------+----------------+----------------+
+|   2.000000e+02 |   0.000000e+00 |   1.040000e+02 |   1.000000e+00 |
++----------------+----------------+----------------+----------------+
+
+real	0m14.290s
+user	0m13.689s
+sys	0m0.583s
+
+mortar constraint, frictionless, FB NCP:
+
+Time Step 40, time = 200, dt = 5
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+
+| time           | contact        | cumulative     | num_nl         |
++----------------+----------------+----------------+----------------+
+|   2.000000e+02 |   0.000000e+00 |   1.360000e+02 |   1.000000e+00 |
++----------------+----------------+----------------+----------------+
+
+real	0m19.272s
+user	0m18.573s
+sys	0m0.676s
+
+mortar constraint, frictionless, min NCP:
+
+Time Step 40, time = 200, dt = 5
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+
+| time           | contact        | cumulative     | num_nl         |
++----------------+----------------+----------------+----------------+
+|   2.000000e+02 |   0.000000e+00 |   1.060000e+02 |   1.000000e+00 |
++----------------+----------------+----------------+----------------+
+
+real	0m15.295s
+user	0m14.640s
+sys	0m0.630s
+
+# 5/28/19
+
+Ok, not running with friction and it's not so hot:
+
+### nodal, frictional, min NCP:
+
+Time Step 62, time = 200, dt = 3.90625
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+
+| time           | contact        | cumulative     | num_nl         |
++----------------+----------------+----------------+----------------+
+|   2.000000e+02 |   0.000000e+00 |   2.780000e+02 |   1.000000e+00 |
++----------------+----------------+----------------+----------------+
+
+real	1m34.515s
+user	1m32.472s
+sys	0m2.002s
+
+### nodal, frictional, fb ncp for tangent, min ncp for normal:
+
+Time Step 49, time = 200, dt = 2.5
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+
+| time           | contact        | cumulative     | num_nl         |
++----------------+----------------+----------------+----------------+
+|   2.000000e+02 |   0.000000e+00 |   2.390000e+02 |   1.000000e+00 |
++----------------+----------------+----------------+----------------+
+
+real	1m1.723s
+user	1m0.251s
+sys	0m1.451s
+
+### frictionless, nodal for lm, nodal for disp, min ncp, FDP:
+
+Time Step 41, time = 200, dt = 5
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+
+| time           | contact        | cumulative     | num_nl         |
++----------------+----------------+----------------+----------------+
+|   2.000000e+02 |   0.000000e+00 |   1.100000e+02 |   1.000000e+00 |
++----------------+----------------+----------------+----------------+
+
+### frictionless, nodal for lm, nodal for disp, min ncp, scaling the gap and contact pressure
+in the LM constraint object, FDP:
+
+Time Step 41, time = 200, dt = 5
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+
+| time           | contact        | cumulative     | num_nl         |
++----------------+----------------+----------------+----------------+
+|   2.000000e+02 |   0.000000e+00 |   1.110000e+02 |   1.000000e+00 |
++----------------+----------------+----------------+----------------+
+
+### nodal lm, mortar disp, frictionless, min NCP, FDP:
+
+Time Step 40, time = 200, dt = 5
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+
+| time           | contact        | cumulative     | num_nl         |
++----------------+----------------+----------------+----------------+
+|   2.000000e+02 |   0.000000e+00 |   1.050000e+02 |   1.000000e+00 |
++----------------+----------------+----------------+----------------+
+
+### frictional, nodal lm, min NCP, SMP, PJFNK, coarse mesh, end time = 30
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+
+| time           | contact        | cumulative     | num_nl         |
++----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   5.000000e+00 |   0.000000e+00 |   1.000000e+00 |   1.000000e+00 |
+|   1.000000e+01 |   0.000000e+00 |   2.000000e+00 |   1.000000e+00 |
+|   1.250000e+01 |   3.000000e+00 |   7.000000e+00 |   5.000000e+00 |
+|   1.500000e+01 |   3.000000e+00 |   1.200000e+01 |   5.000000e+00 |
+|   2.000000e+01 |   3.000000e+00 |   1.600000e+01 |   4.000000e+00 |
+|   2.500000e+01 |   3.000000e+00 |   2.200000e+01 |   6.000000e+00 |
+|   3.000000e+01 |   0.000000e+00 |   2.600000e+01 |   4.000000e+00 |
++----------------+----------------+----------------+----------------+
+
+## Ok, small problem
+
+### frictionless, nodal lm, nodal disp, min NCP, coarse mesh, SMP, PJFNK, basic
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+
+| time           | contact        | cumulative     | num_nl         |
++----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   5.000000e+00 |   0.000000e+00 |   1.000000e+00 |   1.000000e+00 |
+|   1.000000e+01 |   0.000000e+00 |   2.000000e+00 |   1.000000e+00 |
+|   1.500000e+01 |   3.000000e+00 |   6.000000e+00 |   4.000000e+00 |
+|   2.000000e+01 |   3.000000e+00 |   1.000000e+01 |   4.000000e+00 |
+|   2.500000e+01 |   3.000000e+00 |   1.300000e+01 |   3.000000e+00 |
+|   3.000000e+01 |   0.000000e+00 |   1.600000e+01 |   3.000000e+00 |
++----------------+----------------+----------------+----------------+
+
+### frictionless, nodal lm, nodal disp, min NCP, coarse mesh, SMP, PJFNK, bt
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+
+| time           | contact        | cumulative     | num_nl         |
++----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   5.000000e+00 |   0.000000e+00 |   1.000000e+00 |   1.000000e+00 |
+|   1.000000e+01 |   0.000000e+00 |   2.000000e+00 |   1.000000e+00 |
+|   1.500000e+01 |   3.000000e+00 |   6.000000e+00 |   4.000000e+00 |
+|   2.000000e+01 |   3.000000e+00 |   1.000000e+01 |   4.000000e+00 |
+|   2.500000e+01 |   3.000000e+00 |   1.300000e+01 |   3.000000e+00 |
+|   2.750000e+01 |   3.000000e+00 |   1.600000e+01 |   3.000000e+00 |
+|   2.875000e+01 |   3.000000e+00 |   1.900000e+01 |   3.000000e+00 |
+|   3.000000e+01 |   0.000000e+00 |   3.400000e+01 |   1.500000e+01 |
++----------------+----------------+----------------+----------------+
+
+
+### frictionless, nodal lm, mortar disp, min NCP, coarse mesh, SMP, PJFNK, basic
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+
+| time           | contact        | cumulative     | num_nl         |
++----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   5.000000e+00 |   0.000000e+00 |   1.000000e+00 |   1.000000e+00 |
+|   1.000000e+01 |   0.000000e+00 |   2.000000e+00 |   1.000000e+00 |
+|   1.500000e+01 |   3.000000e+00 |   6.000000e+00 |   4.000000e+00 |
+|   2.000000e+01 |   3.000000e+00 |   9.000000e+00 |   3.000000e+00 |
+|   2.500000e+01 |   3.000000e+00 |   1.200000e+01 |   3.000000e+00 |
+|   3.000000e+01 |   0.000000e+00 |   1.500000e+01 |   3.000000e+00 |
++----------------+----------------+----------------+----------------+
+
+### frictionless, nodal lm, mortar disp, min NCP, coarse mesh, SMP, PJFNK, bt
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+
+| time           | contact        | cumulative     | num_nl         |
++----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   5.000000e+00 |   0.000000e+00 |   1.000000e+00 |   1.000000e+00 |
+|   1.000000e+01 |   0.000000e+00 |   2.000000e+00 |   1.000000e+00 |
+|   1.500000e+01 |   3.000000e+00 |   6.000000e+00 |   4.000000e+00 |
+|   2.000000e+01 |   3.000000e+00 |   9.000000e+00 |   3.000000e+00 |
+|   2.500000e+01 |   3.000000e+00 |   1.200000e+01 |   3.000000e+00 |
+|   3.000000e+01 |   0.000000e+00 |   1.500000e+01 |   3.000000e+00 |
++----------------+----------------+----------------+----------------+

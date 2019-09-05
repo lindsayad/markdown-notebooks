@@ -22,11 +22,15 @@ etags moose:
 
 find . \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -iname "*.h" -o -iname "*.hpp" -o -iname "*.C" -o -iname "*.c" \) -print | etags -
 
+find . -type f \( -name "*.h" -o -name "*.C" \) -exec gsed -i 's/derivatives()\[\(.*\)]/derivatives().insert\(\1\)/g' {} +
+
 clang++ -std=c++11 -g -O0 -Iinclude -I$PETSC_DIR/include -o export_discontinuous libmesh_export_discotinuous_error.cxx exact_solution.C -Llib -Wl,-rpath -Wl,lib -lmesh_dbg
 
 icecream:
 
 ssh -Y icecream.inl.gov && icemon &
+
+git submodule foreach "git fetch origin; git co devel; git rebase"
 
 Textbook that I need to order: "Nonlinear Systems and Optimization for the
 Chemical Engineer"

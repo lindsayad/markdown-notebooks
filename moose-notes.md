@@ -22,7 +22,14 @@ etags moose:
 
 find . \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -iname "*.h" -o -iname "*.hpp" -o -iname "*.C" -o -iname "*.c" \) -print | etags -
 
-find . -type f \( -name "*.h" -o -name "*.C" \) -exec gsed -i 's/derivatives()\[\(.*\)]/derivatives().insert\(\1\)/g' {} +
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec gsed -i 's/derivatives()\[\(.*\)]/derivatives().insert\(\1\)/g' {} +
+
+Beautiful sed matches for deleting ComputeStage (see https://stackoverflow.com/questions/1251999/how-can-i-replace-a-newline-n-using-sed):
+
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i ':a;N;$!ba;s/template <ComputeStage compute_stage>\n//g' {} +
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i 's/<compute_stage>//g' {} +
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i ':a;N;$!ba;s/ *using.*Members;\n//g' {} +
+
 
 clang++ -std=c++11 -g -O0 -Iinclude -I$PETSC_DIR/include -o export_discontinuous libmesh_export_discotinuous_error.cxx exact_solution.C -Llib -Wl,-rpath -Wl,lib -lmesh_dbg
 

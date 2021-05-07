@@ -1,3 +1,7 @@
+skip some submodules in foreach:
+
+git submodule foreach 'case $name in 4|6|7) ;; *) git status ;; esac'
+
 Print position in vector in LLDB:
 ```
 p elem_num_map.__begin_[8297]
@@ -20,16 +24,45 @@ PBS run_tests command:
 
 etags moose:
 
-find . \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -iname "*.h" -o -iname "*.hpp" -o -iname "*.C" -o -iname "*.c" \) -print | etags -
+find . \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -iname "*.h" -o -iname "*.hpp" -o -iname "*.C" -o -iname "*.c" -o -iname "*.cc" \) -print | etags -
 
 find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec gsed -i 's/derivatives()\[\(.*\)]/derivatives().insert\(\1\)/g' {} +
 
 Beautiful sed matches for deleting ComputeStage (see https://stackoverflow.com/questions/1251999/how-can-i-replace-a-newline-n-using-sed):
 
 find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i ':a;N;$!ba;s/template <ComputeStage compute_stage>\n//g' {} +
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i ':a;N;$!ba;s/template<ComputeStage compute_stage>\n//g' {} +
 find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i 's/<compute_stage>//g' {} +
-find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i ':a;N;$!ba;s/ *using.*Members;\n//g' {} +
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i ':a;N;$!ba;s/ *using[a-zA-Z]*Members;\n//g' {} +
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i ':a;N;$!ba;s/ *using[a-zA-Z]*Members\n//g' {} +
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i ':a;N;$!ba;s/template <ComputeStage>\n//g' {} +
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i 's/ADMaterialProperty(\(.*\))/ADMaterialProperty<\1>/g' {} +
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i 's/adBaseClass.*//g' {} +
 
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i 's/\([^.>]\)getParam</\1this->template getParam</g' {} +
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i 's/getParam</this->template getParam</g' {} +
+
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i 's/\([^.>]\)getUserObject</\1this->template getUserObject</g' {} +
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i 's/getUserObjectTempl/getUserObject/g' {} +
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i 's/getMaterialPropertyByNameTempl/getMaterialPropertyByName/g' {} +
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" -o -iname "*thm*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i 's/getParamTempl/getParam/g' {} +
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" -o -iname "*thm*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i 's/getUserObjectTempl/getUserObject/g' {} +
+
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.i" \) -exec sed -i 's/GenericConstantMaterial/ADGenericConstantMaterial/g' {} +
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.i" \) -exec sed -i 's/GenericFunctionMaterial/ADGenericFunctionMaterial/g' {} +
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.i" \) -exec sed -i 's/= \(Material.*Aux\)/= AD\1/g' {} +
+
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i 's/getADMaterialProperty<Real>(this->derivativePropertyName/getMaterialProperty<Real>(this->derivativePropertyName/g' {} +
+
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.i" -o -iname "*.h" -o -iname "*.C" \) -exec sed -i 's/ADGenericConstantMaterial/GenericConstantMaterial/g' {} +
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.i" -o -iname "*.h" -o -iname "*.C" \) -exec sed -i 's/ADGenericFunctionMaterial/GenericFunctionMaterial/g' {} +
+
+find . -type f \( \( -iname "*build*" -o -iname "*installed*" \) -prune \) -o \( -name "*.h" -o -name "*.C" \) -exec sed -i 's/this->template //g' {} +
+
+find . -type f \( -name "*.h" -o -name "*.C" \) -exec sed -i 's/getParamTempl/getParam/g' {} +
+find . -type f \( -name "*.h" -o -name "*.C" \) -exec sed -i 's/getUserObjectTempl/getUserObject/g' {} +
+
+find . -type f \( -name "*.h" -o -name "*.C" \) -exec sed -i 's/\(Property.*\)char/\1Bool/g' {} +
 
 clang++ -std=c++11 -g -O0 -Iinclude -I$PETSC_DIR/include -o export_discontinuous libmesh_export_discotinuous_error.cxx exact_solution.C -Llib -Wl,-rpath -Wl,lib -lmesh_dbg
 
@@ -11372,3 +11405,83 @@ Postprocessor Values:
 |   2.500000e+01 |   3.000000e+00 |   1.200000e+01 |   3.000000e+00 |
 |   3.000000e+01 |   0.000000e+00 |   1.500000e+01 |   3.000000e+00 |
 +----------------+----------------+----------------+----------------+
+
+# 5/7/21
+
+There definitely seems like there is something wrong somewhere because I am getting first order, even for central differencing:
+
+With primitives:
+
+VanLeer
+
+1-term, no Dirichlet:
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+
+| time           | L2T_fluid      | L2pressure     | L2sup_vel_x    | h              |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+00 |   1.286579e-07 |   4.076934e-05 |   7.762676e-05 |   4.882812e-04 |
++----------------+----------------+----------------+----------------+----------------+
+
+L2pressure slope, 1.502911
+L2sup_vel_x slope, 1.018554
+L2T_fluid slope, 1.042706
+
+1-term, with Dirichlet:
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+
+| time           | L2T_fluid      | L2pressure     | L2sup_vel_x    | h              |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+00 |   5.973462e-08 |   4.247309e-05 |   3.773367e-05 |   4.882812e-04 |
++----------------+----------------+----------------+----------------+----------------+
+
+L2pressure slope, 1.501349
+L2sup_vel_x slope, 1.041680
+L2T_fluid slope, 1.116735
+
+2-term, no Dirichlet
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+
+| time           | L2T_fluid      | L2pressure     | L2sup_vel_x    | h              |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+00 |   3.985406e-08 |   1.647333e-03 |   5.463936e-05 |   4.882812e-04 |
++----------------+----------------+----------------+----------------+----------------+
+
+L2pressure slope, 0.998138
+L2sup_vel_x slope, 0.999841
+L2T_fluid slope, 1.089510
+
+2-term, with Dirichlet:
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+
+| time           | L2T_fluid      | L2pressure     | L2sup_vel_x    | h              |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+00 |   3.397868e-08 |   1.315868e-03 |   4.508098e-05 |   4.882812e-04 |
++----------------+----------------+----------------+----------------+----------------+
+
+L2pressure slope, 0.997210
+L2sup_vel_x slope, 1.006373
+L2T_fluid slope, 1.150770
+
+CD:
+
+2-term, with Dirichlet:
+
+Postprocessor Values:
++----------------+----------------+----------------+----------------+----------------+
+| time           | L2T_fluid      | L2pressure     | L2sup_vel_x    | h              |
++----------------+----------------+----------------+----------------+----------------+
+|   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |   0.000000e+00 |
+|   1.000000e+00 |   7.687830e-08 |   1.744895e-03 |   5.389918e-05 |   4.882812e-04 |
++----------------+----------------+----------------+----------------+----------------+
+
+L2pressure slope, 1.000617
+L2sup_vel_x slope, 1.004616
+L2T_fluid slope, 1.012204
